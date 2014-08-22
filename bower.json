@@ -1,0 +1,23 @@
+{
+  "name": "china-v-fans",
+  "main": "index.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/jarvys/china-v-fans",
+  "authors": [
+    "Jarvys <yuhan534@126.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "ratchet": "~2.0.2",
+    "wechat-share": "*",
+    "bootstrap": "~3.2.0",
+    "bootstrap-sass-official": "~3.2.0+1"
+  }
+}

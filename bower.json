@@ -19,6 +19,7 @@
     "wechat-share": "*",
     "bootstrap": "~3.2.0",
     "bootstrap-sass-official": "~3.2.0",
-    "headroom.js": "~0.7.0"
+    "headroom.js": "~0.7.0",
+    "velocity": "~0.11.8"
   }
 }

@@ -1,6 +1,7 @@
 @import "public/components/bootstrap-sass-official/assets/stylesheets/bootstrap.scss";
 
 $bg: #ECC013;
+
 body {
     background-color: $bg;
 }
@@ -107,6 +108,11 @@ $nav-active-color: #9A1011;
     .photo-wrapper  {
         overflow: auto;
         @include square(100%);
+        position: relative;
+
+        img {
+            position: absolute;
+        }
     }
 
     .toolbar {
@@ -133,6 +139,11 @@ $nav-active-color: #9A1011;
             }
 
             &.heart {
+
+                &.up {
+                    color: $brand-danger;
+                }
+
                 text-align: center;
             }
         }

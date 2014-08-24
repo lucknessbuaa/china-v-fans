@@ -4661,7 +4661,10 @@ body {
   .photo-view .photo-wrapper {
     overflow: auto;
     width: 100%;
-    height: 100%; }
+    height: 100%;
+    position: relative; }
+    .photo-view .photo-wrapper img {
+      position: absolute; }
   .photo-view .toolbar {
     position: absolute;
     width: 100%;
@@ -4681,3 +4684,5 @@ body {
         text-align: left; }
       .photo-view .toolbar div.heart {
         text-align: center; }
+        .photo-view .toolbar div.heart.up {
+          color: #d9534f; }

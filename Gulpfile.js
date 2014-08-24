@@ -1,19 +1,44 @@
 var gulp = require('gulp');
+var util = require('gulp-util');
+var notify = require('display-notification');
 var changed = require('gulp-changed');
 var imagemin = require('gulp-imagemin');
 var nodemon = require('gulp-nodemon');
 var tinypng = require('gulp-tinypng');
 var sass = require('gulp-sass');
 var base64 = require('gulp-base64');
-var browserify = require('gulp-browserify');
+var browserify = require('browserify');
+var source = require('vinyl-source-stream')
+
+function onError(fn) {
+    return function(err) {
+        util.log(err);
+        notify({
+            title: 'Error',
+            subtitle: 'fail to compiling scripts',
+            text: err,
+            sound: 'Bottle'
+        });
+
+        if (fn) {
+            fn.call(null, err);
+        }
+    }
+}
 
 gulp.task('scripts', function() {
-    return gulp.src('public/index.js')
-        .pipe(browserify({
-            insertGlobals: true
+    var stream = browserify('./public/index.js').bundle();
+    return stream.on('error', onError(function() {
+            stream.end();
         }))
-        .on('error', console.error)
-        .pipe(gulp.dest('public/build'))
+        .pipe(source('index.js'))
+        .pipe(gulp.dest('./public/build'))
+        .on('end', function() {
+            notify({
+                'title': 'scripts',
+                'subtitle': 'finish compiling scripts'
+            });
+        })
 });
 
 gulp.task('sass', function() {
@@ -71,4 +96,3 @@ gulp.task('develop', ["watch"], function() {
         console.log('restarted!')
     })
 });
-

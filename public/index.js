@@ -1,19 +1,28 @@
 var multiline = require("multiline");
 var _ = require("underscore");
-var Backbone = require("backbone");
 var $ = require("jquery");
-var jQuery = $;
-
+var Backbone = require("backbone");
 Backbone.$ = $;
 
+var download = require("multi-download");
+var Velocity = require("./components/Velocity/velocity.js");
+
 var CONTENT_ID = 1;
+
+function mark(id) {
+
+}
+
+function unmark(id) {
+
+}
 
 function getPhotoList(offset, limit) {
     return $.get("/API/output/image/?format=json&content=" + CONTENT_ID);
 }
 
 function getPhoto(id) {
-    return $.get("/API/output/image/" + id + "?format=json&content=");
+    return $.get("/API/output/image/" + id + "/?format=json&content=");
 }
 
 var ImageView = Backbone.View.extend({
@@ -35,21 +44,108 @@ var ImageView = Backbone.View.extend({
 
         this.setElement($(tpl(options))[0]);
         this.$wrapper = this.$el.find('.photo-wrapper')
-    },
 
-    setImage: function(id) {
-        getPhoto(id).then(_.bind(function(data) {
-            this.$wrapper.html("");
-            $("<img src='" + data.image + "'>").appendTo(this.$wrapper);
+        this.$share = this.$el.find('.share');
+        this.$heart = this.$el.find('.heart');
+        this.$download = this.$el.find('.download');
+
+        this.$download.click(_.bind(function() {
+            download([this.imageUrl]);
+        }, this));
+
+        this.$heart.click(_.bind(function() {
+            if (!this.$heart.hasClass('up')) {
+                this.$heart.addClass('up');
+                mark(this.imageId);
+                this.markImage(this.imageId);
+            } else {
+                unmark(this.imageId);
+                this.unmarkImage(this.imageId);
+                this.$heart.removeClass('up');
+            }
+
+            Velocity(this.$heart[0], {
+                'font-size': 24,
+                'padding-top': 8
+            }, {
+                'duration': 200
+            });
+
+            Velocity(this.$heart[0], "reverse", {
+                'duration': 200
+            });
+        }, this));
+
+        this.$wrapper.click(_.bind(function() {
+            this.trigger('exit');
         }, this));
     },
 
-    show: function() {
-        this.$el.show();
+    isImageMarkd: function(id) {
+        return window.localStorage ? localStorage.getItem('image-' + id) === "true" : false;
     },
 
-    hide: function() {
-        this.$el.hide();
+    markImage: function(id) {
+        if (window.localStorage) {
+            localStorage.setItem('image-' + id, true);
+        }
+    },
+
+    unmarkImage: function(id) {
+        if (window.localStorage) {
+            localStorage.setItem('image-' + id, false);
+        }
+    },
+
+    setImage: function(id) {
+        this.imageId = id;
+
+        if (this.isImageMarkd(id)) {
+            this.$heart.addClass('up');
+        }
+
+        getPhoto(id).then(_.bind(function(data) {
+            this.imageUrl = data.image;
+            this.$wrapper.html("");
+            this.$image = $("<img src='" + data.image + "'>").appendTo(this.$wrapper);
+
+            this.$image.load(_.bind(function() {
+                this.onImageLoad();
+            }, this));
+        }, this));
+    },
+
+    onImageLoad: function() {
+        var imgWidth = this.$image.width();
+        var imgHeight = this.$image.height();
+
+        var wrapperWidth = this.$wrapper.width();
+        var wrapperHeight = this.$wrapper.height();
+
+        console.log(imgWidth, imgHeight, wrapperWidth, wrapperHeight);
+        this.$wrapper.scrollTop(-(wrapperHeight - imgHeight) / 2);
+        if (imgWidth / imgHeight > wrapperWidth / wrapperHeight) {
+            var width = imgWidth * wrapperHeight / imgHeight;
+            this.$image.height(wrapperHeight);
+            this.$wrapper.scrollLeft(-(wrapperWidth - width) / 2);
+        } else {
+            this.$image.width(wrapperWidth);
+            this.$wrapper.scrollTop(0);
+        }
+    },
+
+    fadeIn: function() {
+        Velocity(this.$el[0], "fadeIn");
+    },
+
+    fadeOut: function(callback) {
+        Velocity(this.$el[0], "fadeOut", {
+            complete: callback
+        });
+    },
+
+    destroy: function() {
+        this.$el.remove();
     }
 });
 
@@ -159,45 +255,60 @@ var TabView = Backbone.View.extend({
     }
 });
 
-var tabView = new TabView;
-var photoListView;
+var $content, tabView, photoListView;
 
 var FansRouter = Backbone.Router.extend({
-
     routes: {
-        "photo(/:id)": "photo",
+        "photo": "photoList",
+        "photo/:id": "photo",
         "video": "video",
         "news": "news"
     },
 
     ensureTab: function(tab) {
+        if (!tabView) {
+            tabView = new TabView
+            tabView.$el.appendTo($content);
+        }
+
         if (tabView.getActiveTab() !== tab) {
             tabView.activate(tab);
         }
     },
 
-    photo: function(id) {
+    photoList: function() {
         this.ensureTab('photo');
 
-        if (id) {
-            if (!this.imageView) {
-                this.imageView = new ImageView();
-                this.imageView.$el.appendTo($(".content"));
-            }
-
-            this.imageView.setImage(id);
-            this.imageView.show();
-            this.imageView.on('exit', _.bind(function() {
-                this.imageView.hide();
-            }, this));
+        if (!photoListView) {
+            photoListView = new PhotoListView();
+            photoListView.$el.appendTo($(".content"));
         } else {
-            if (!photoListView) {
-                photoListView = new PhotoListView();
-                photoListView.$el.appendTo($(".content"));
-            } else {
-                photoListView.show();
-            }
+            photoListView.show();
         }
+    },
+
+    photo: function(id) {
+        if (!this.imageView) {
+            this.imageView = new ImageView();
+            this.imageView.$el.appendTo($(".content"));
+        }
+
+        console.log('set image id');
+        this.imageView.setImage(id);
+        console.log('fadeIn');
+        this.imageView.fadeIn();
+
+        this.imageView.on('exit', _.bind(function() {
+            this.imageView.fadeOut(_.bind(function() {
+                this.imageView.destroy();
+                this.imageView = null;
+            }, this));
+
+            Backbone.history.navigate("/photo", {
+                replace: 'replaceState',
+                trigger: true
+            });
+        }, this));
     },
 
     video: function(id) {
@@ -210,7 +321,7 @@ var FansRouter = Backbone.Router.extend({
 });
 
 $(function() {
-    tabView.$el.appendTo($(".content"));
+    $content = $(".content");
 
     new FansRouter();
     Backbone.history.start({

@@ -4,10 +4,16 @@ var args = require('minimist')(process.argv.slice(2), {
         port: 'p'
     },
     default: {
-        port: '6000'
+        port: '9758'
     }
 });
 
+
+var httpProxy = require('http-proxy');
+var proxy = httpProxy.createProxyServer();
+proxy.on('error', function(e) {
+    console.error(e);
+});
 
 var express = require('express');
 var morgan = require('morgan');
@@ -37,7 +43,15 @@ router.get('/news', function(req, res) {
 
 app.use("/", router);
 
+app.get(/^\/API\/output\/.*$/, function(req, res) {
+    proxy.web(req, res, {
+        headers: {
+            host: 'contents.jarvys.me'
+        },
+        target: 'http://contents.jarvys.me',
+    });
+});
+
 app.listen(parseInt(args.port), function() {
     console.log("listening on port", args.port);
 });
-

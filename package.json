@@ -16,7 +16,8 @@
     "gulp-imagemin": "^1.0.0",
     "gulp-sass": "^0.7.3",
     "gulp-tinypng": "^1.0.2",
-	"browserify-shim": "3.6.0"
+    "browserify-shim": "3.6.0",
+    "gulp-nodemon": "~1.0.4"
   },
   "dependencies": {
     "backbone": "^1.1.2",
@@ -27,5 +28,24 @@
     "morgan": "^1.2.3",
     "multiline": "^1.0.0",
     "underscore": "^1.6.0"
+  },
+  "browserify": {
+    "transform": [
+      "browserify-shim"
+    ]
+  },
+  "browser": {
+    "jquery": "./public/components/jquery/dist/jquery.js",
+    "bootstrap": "./public/components/bootstrap/dist/js/bootstrap.js",
+    "headroom": "./public/components/headroom.js/dist/headroom.js"
+  },
+  "browserify-shim": {
+    "jquery": "$",
+    "bootstrap": {
+      "depends": [
+        "jquery"
+      ]
+    },
+    "headroom": "Headroom"
   }
 }

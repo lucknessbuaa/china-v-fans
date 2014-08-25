@@ -65,8 +65,7 @@ gulp.task('image-other', function() {
     return gulp.src("images/*.{jpg,jpeg,gif}")
         .pipe(changed('public/img'))
         .pipe(imagemin({
-            progressive: true,
-            use: [pngcrush()]
+            progressive: true
         }))
         .pipe(gulp.dest("public/img"));
 });

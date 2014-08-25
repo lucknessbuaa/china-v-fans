@@ -1,20 +1,27 @@
 var multiline = require("multiline");
 var _ = require("underscore");
+var multpl = require('multpl');
 var $ = require("jquery");
+var sizing = require('image-sizing');
 var Backbone = require("backbone");
 Backbone.$ = $;
 
 var download = require("multi-download");
+var IScroll = require("iscroll");
 var Velocity = require("./components/Velocity/velocity.js");
 
 var CONTENT_ID = 1;
 
 function mark(id) {
-
+    // TODO
 }
 
 function unmark(id) {
+    // TODO
+}
 
+function getVideoList(offset, limit) {
+    return $.get("/API/output/video/?format=json&content=" + CONTENT_ID);
 }
 
 function getPhotoList(offset, limit) {
@@ -24,6 +31,18 @@ function getPhotoList(offset, limit) {
 function getPhoto(id) {
     return $.get("/API/output/image/" + id + "/?format=json&content=");
 }
+
+var ViewProto = {
+    hide: function() {
+        this.$el.hide()
+    },
+
+    show: function() {
+        this.$el.show();
+    }
+}
+
+var BaseView = Backbone.View.extend(ViewProto);
 
 var ImageView = Backbone.View.extend({
     initialize: function(options) {
@@ -51,6 +70,10 @@ var ImageView = Backbone.View.extend({
 
         this.$download.click(_.bind(function() {
             download([this.imageUrl]);
+        }, this));
+
+        this.$share.click(_.bind(function() {
+            // TODO show share tip
         }, this));
 
         this.$heart.click(_.bind(function() {
@@ -166,8 +189,7 @@ var PhotoCell = Backbone.View.extend({
             </li>
             */
             console.log
-        }).trim());
-
+        }).trim()); 
         this.setElement($(tpl(options))[0]);
         this.$el.click(_.bind(function() {
             this.trigger('click');
@@ -175,7 +197,69 @@ var PhotoCell = Backbone.View.extend({
     }
 });
 
-var PhotoListView = Backbone.View.extend({
+var VideoItem = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <li class='video-item'>
+                <div class='title'><%= name %></div>
+                <div class='date'>2014-08-09</div>
+                <div class='cover-wrapper'>
+                    <div class='cover'>
+                        <img class='image' style='display: none' src='<%= image %>'>
+                        <a href='<%= url %>' class='btn-play'></a>
+                    </div>
+                </div>
+                <div class='description'><%= description %></div>
+            </li>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+
+        this.$wrapper = this.$el.find('.cover');
+        this.$image = this.$el.find('img.image');
+        this.$image.load(_.bind(function() {
+            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
+                this.$image.width(), this.$image.height());
+
+            this.$image.css('width', size.width + 'px');
+            this.$image.css('margin-left', (-size.width / 2) + 'px')
+            this.$image.css('left', '50%');
+            this.$image.show();
+        }, this));
+    }
+});
+
+var VideoListView = BaseView.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <div class='video-list-wrapper'>
+                <ul class='video-list list-unstyled'>
+            </div>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+        this.$list = this.$el.children('ul');
+
+        getVideoList(0, 10000).then(_.bind(function(data) {
+            _.each(data.objects, _.bind(function(video) {
+                var item = new VideoItem(video);
+                item.$el.appendTo(this.$list);
+            }, this));
+        }, this), function() {
+            // TODO
+        });
+    }
+});
+
+var NewsView = BaseView.extend({
+    initialize: function(options) {}
+});
+
+var PhotoListView = BaseView.extend({
     initialize: function(options) {
         var tpl = _.template(multiline(function() {
             /*@preserve
@@ -195,10 +279,6 @@ var PhotoListView = Backbone.View.extend({
             this.photoList = data.objects;
             this.render();
         }, this));
-    },
-
-    show: function() {
-        this.$el.show();
     },
 
     render: function() {
@@ -239,14 +319,28 @@ var TabView = Backbone.View.extend({
             var tab = $this.attr('href');
             self.activate(tab);
         });
+
+        this.views = {};
     },
 
     activate: function(tab) {
-        this.$el.children().removeClass('active');
-        this.$el.find('[href=' + tab + ']').parent().addClass('active');
         Backbone.history.navigate(tab, {
             replace: 'replaceState'
         });
+
+        var activeTab = this.getActiveTab();
+        if (activeTab === tab) {
+            return;
+        }
+
+        this.$el.find("a[href=" + activeTab + "]").parent().removeClass('active');
+        this.views[activeTab] && this.views[activeTab].hide();
+        this.$el.find("a[href=" + tab + "]").parent().addClass('active');
+        this.views[tab] && this.views[tab].show();
+    },
+
+    addTab: function(tabname, view) {
+        this.views[tabname] = view;
     },
 
     getActiveTab: function() {
@@ -255,7 +349,7 @@ var TabView = Backbone.View.extend({
     }
 });
 
-var $content, tabView, photoListView;
+var $content, tabView, photoListView, newsView, videoListView;
 
 var FansRouter = Backbone.Router.extend({
     routes: {
@@ -268,12 +362,24 @@ var FansRouter = Backbone.Router.extend({
     ensureTab: function(tab) {
         if (!tabView) {
             tabView = new TabView
-            tabView.$el.appendTo($content);
+            tabView.$el.appendTo(document.body);
+
+            photoListView = new PhotoListView();
+            tabView.addTab('photo', photoListView);
+
+            videoListView = new VideoListView();
+            tabView.addTab('video', videoListView);
+
+            newsView = new NewsView();
+            tabView.addTab('news', newsView);
+
+            _.each([photoListView, videoListView, newsView], function(view) {
+                view.$el.hide();
+                view.$el.appendTo($content);
+            });
         }
 
-        if (tabView.getActiveTab() !== tab) {
-            tabView.activate(tab);
-        }
+        tabView.activate(tab);
     },
 
     photoList: function() {
@@ -313,6 +419,9 @@ var FansRouter = Backbone.Router.extend({
 
     video: function(id) {
         this.ensureTab('video');
+        if (photoListView) {
+            photoListView.hide();
+        }
     },
 
     news: function() {

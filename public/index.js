@@ -8,7 +8,7 @@ Backbone.$ = $;
 
 var download = require("multi-download");
 var IScroll = require("iscroll");
-var Velocity = require("./components/Velocity/velocity.js");
+var Velocity = require("./components/velocity/velocity.js");
 
 var CONTENT_ID = 1;
 
@@ -26,6 +26,10 @@ function getVideoList(offset, limit) {
 
 function getPhotoList(offset, limit) {
     return $.get("/API/output/image/?format=json&content=" + CONTENT_ID);
+}
+
+function getNewsList(offset, limit) {
+    return $.get("/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
 function getPhoto(id) {
@@ -255,8 +259,76 @@ var VideoListView = BaseView.extend({
     }
 });
 
+var NewsItem = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <li class='news-item'>
+                <div class='title'><%= name %></div>
+                <div class='date'>2014-08-09</div>
+                <div class='cover-wrapper'>
+                    <div class='cover'>
+                        <img class='image' style='display: none' src='<%= image %>'>
+                        <a href='#' class='btn-play'></a>
+                    </div>
+                </div>
+                <div class='con hi'><%=contents %></div>
+                <div class='open'><span>展开</span></div>
+            </li>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+
+        this.$wrapper = this.$el.find('.cover');
+        this.$image = this.$el.find('img.image');
+        this.$open = this.$el.find('.open');
+        this.$con = this.$el.find('.con');
+        this.$open.bind('click',function(){
+            var temp = $(this).parent().children()[3];
+            temp = $(temp);
+            if(temp.hasClass('hi')){
+                temp.removeClass('hi');
+                $(this).children()[0].innerHTML = '收起';
+            }else{
+                temp.addClass('hi');
+                $(this).children()[0].innerHTML = '展开';
+            }
+        });
+        this.$image.load(_.bind(function() {
+            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
+                this.$image.width(), this.$image.height());
+
+            this.$image.css('width', size.width + 'px');
+            this.$image.css('margin-left', (-size.width / 2) + 'px')
+            this.$image.css('left', '50%');
+            this.$image.show();
+        }, this));
+    }
+});
+
 var NewsView = BaseView.extend({
-    initialize: function(options) {}
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <div class='news-list-wrapper'>
+                <ul class='news-list list-unstyled'>
+            </div>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+        this.$list = this.$el.children('ul');
+
+        getNewsList(0, 10000).then(_.bind(function(data) {
+            _.each(data.objects, _.bind(function(article) {
+                var item = new NewsItem(article);
+                item.$el.appendTo(this.$list);
+            }, this));
+        }, this), function() {
+            // TODO
+        });
+    }
 });
 
 var PhotoListView = BaseView.extend({
@@ -426,6 +498,9 @@ var FansRouter = Backbone.Router.extend({
 
     news: function() {
         this.ensureTab('news');
+        if (photoListView) {
+            photoListView.hide();
+        }
     }
 });
 

@@ -1,6 +1,5 @@
 var gulp = require('gulp');
 var util = require('gulp-util');
-var notify = require('display-notification');
 var changed = require('gulp-changed');
 var imagemin = require('gulp-imagemin');
 var nodemon = require('gulp-nodemon');
@@ -9,6 +8,13 @@ var sass = require('gulp-sass');
 var base64 = require('gulp-base64');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream')
+
+
+try {
+    var notify = require('display-notification');
+} catch (e) {
+    var notify = function() {};
+}
 
 function onError(fn) {
     return function(err) {

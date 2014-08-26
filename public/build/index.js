@@ -1,520 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var multiline = require("multiline");
-var _ = require("underscore");
-var multpl = require('multpl');
-var $ = require("jquery");
-var sizing = require('image-sizing');
-var Backbone = require("backbone");
-Backbone.$ = $;
-
-var download = require("multi-download");
-var IScroll = require("iscroll");
-var Velocity = require("./components/velocity/velocity.js");
-
-var CONTENT_ID = 1;
-
-function mark(id) {
-    // TODO
-}
-
-function unmark(id) {
-    // TODO
-}
-
-function getVideoList(offset, limit) {
-    return $.get("/API/output/video/?format=json&content=" + CONTENT_ID);
-}
-
-function getPhotoList(offset, limit) {
-    return $.get("/API/output/image/?format=json&content=" + CONTENT_ID);
-}
-
-function getNewsList(offset, limit) {
-    return $.get("/API/output/article/?format=json&content=" + CONTENT_ID);
-}
-
-function getPhoto(id) {
-    return $.get("/API/output/image/" + id + "/?format=json&content=");
-}
-
-var ViewProto = {
-    hide: function() {
-        this.$el.hide()
-    },
-
-    show: function() {
-        this.$el.show();
-    }
-}
-
-var BaseView = Backbone.View.extend(ViewProto);
-
-var ImageView = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <div class='photo-view'>
-                <div class='photo-wrapper'>
-                </div>
-                <div class='toolbar'>
-                    <div class='share'><span class='glyphicon glyphicon-share'></span></div>
-                    <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
-                    <div class='download'><span class='glyphicon glyphicon-download-alt'></span></div>
-                <div>
-            </div>
-            */
-            console.log
-        }).trim());
-
-        this.setElement($(tpl(options))[0]);
-        this.$wrapper = this.$el.find('.photo-wrapper')
-
-        this.$share = this.$el.find('.share');
-        this.$heart = this.$el.find('.heart');
-        this.$download = this.$el.find('.download');
-
-        this.$download.click(_.bind(function() {
-            download([this.imageUrl]);
-        }, this));
-
-        this.$share.click(_.bind(function() {
-            // TODO show share tip
-        }, this));
-
-        this.$heart.click(_.bind(function() {
-            if (!this.$heart.hasClass('up')) {
-                this.$heart.addClass('up');
-                mark(this.imageId);
-                this.markImage(this.imageId);
-            } else {
-                unmark(this.imageId);
-                this.unmarkImage(this.imageId);
-                this.$heart.removeClass('up');
-            }
-
-            Velocity(this.$heart[0], {
-                'font-size': 24,
-                'padding-top': 8
-            }, {
-                'duration': 200
-            });
-
-            Velocity(this.$heart[0], "reverse", {
-                'duration': 200
-            });
-        }, this));
-
-        this.$wrapper.click(_.bind(function() {
-            this.trigger('exit');
-        }, this));
-    },
-
-    isImageMarkd: function(id) {
-        return window.localStorage ? localStorage.getItem('image-' + id) === "true" : false;
-    },
-
-    markImage: function(id) {
-        if (window.localStorage) {
-            localStorage.setItem('image-' + id, true);
-        }
-    },
-
-    unmarkImage: function(id) {
-        if (window.localStorage) {
-            localStorage.setItem('image-' + id, false);
-        }
-    },
-
-    setImage: function(id) {
-        this.imageId = id;
-
-        if (this.isImageMarkd(id)) {
-            this.$heart.addClass('up');
-        }
-
-        getPhoto(id).then(_.bind(function(data) {
-            this.imageUrl = data.image;
-            this.$wrapper.html("");
-            this.$image = $("<img src='" + data.image + "'>").appendTo(this.$wrapper);
-
-            this.$image.load(_.bind(function() {
-                this.onImageLoad();
-            }, this));
-        }, this));
-    },
-
-    onImageLoad: function() {
-        var imgWidth = this.$image.width();
-        var imgHeight = this.$image.height();
-
-        var wrapperWidth = this.$wrapper.width();
-        var wrapperHeight = this.$wrapper.height();
-
-        console.log(imgWidth, imgHeight, wrapperWidth, wrapperHeight);
-        this.$wrapper.scrollTop(-(wrapperHeight - imgHeight) / 2);
-        if (imgWidth / imgHeight > wrapperWidth / wrapperHeight) {
-            var width = imgWidth * wrapperHeight / imgHeight;
-            this.$image.height(wrapperHeight);
-            this.$wrapper.scrollLeft(-(wrapperWidth - width) / 2);
-        } else {
-            this.$image.width(wrapperWidth);
-            this.$wrapper.scrollTop(0);
-        }
-    },
-
-    fadeIn: function() {
-        Velocity(this.$el[0], "fadeIn");
-    },
-
-    fadeOut: function(callback) {
-        Velocity(this.$el[0], "fadeOut", {
-            complete: callback
-        });
-    },
-
-    destroy: function() {
-        this.$el.remove();
-    }
-});
-
-var PhotoCell = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <li class='photo-item'>
-                <div class='photo-item-inner'>
-                    <div class='photo-wrapper'>
-                        <img src='<%= image %>' onError="this.src='http://placehold.it/200x360/fff&text=!'">
-                    </div>
-                    <div class='title'><%= name %></div>
-                    <div class='likes'>
-                        <span class='glyphicon glyphicon-heart'></span>&nbsp;<%= likes %>
-                    </div>
-                </div>
-            </li>
-            */
-            console.log
-        }).trim()); 
-        this.setElement($(tpl(options))[0]);
-        this.$el.click(_.bind(function() {
-            this.trigger('click');
-        }, this));
-    }
-});
-
-var VideoItem = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <li class='video-item'>
-                <div class='title'><%= name %></div>
-                <div class='date'>2014-08-09</div>
-                <div class='cover-wrapper'>
-                    <div class='cover'>
-                        <img class='image' style='display: none' src='<%= image %>'>
-                        <a href='<%= url %>' class='btn-play'></a>
-                    </div>
-                </div>
-                <div class='description'><%= description %></div>
-            </li>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-
-        this.$wrapper = this.$el.find('.cover');
-        this.$image = this.$el.find('img.image');
-        this.$image.load(_.bind(function() {
-            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
-                this.$image.width(), this.$image.height());
-
-            this.$image.css('width', size.width + 'px');
-            this.$image.css('margin-left', (-size.width / 2) + 'px')
-            this.$image.css('left', '50%');
-            this.$image.show();
-        }, this));
-    }
-});
-
-var VideoListView = BaseView.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <div class='video-list-wrapper'>
-                <ul class='video-list list-unstyled'>
-            </div>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-        this.$list = this.$el.children('ul');
-
-        getVideoList(0, 10000).then(_.bind(function(data) {
-            _.each(data.objects, _.bind(function(video) {
-                var item = new VideoItem(video);
-                item.$el.appendTo(this.$list);
-            }, this));
-        }, this), function() {
-            // TODO
-        });
-    }
-});
-
-var NewsItem = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <li class='news-item'>
-                <div class='title'><%= name %></div>
-                <div class='date'>2014-08-09</div>
-                <div class='cover-wrapper'>
-                    <div class='cover'>
-                        <img class='image' style='display: none' src='<%= image %>'>
-                        <a href='#' class='btn-play'></a>
-                    </div>
-                </div>
-                <div class='con hi'><%=contents %></div>
-                <div class='open'><span>展开</span></div>
-            </li>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-
-        this.$wrapper = this.$el.find('.cover');
-        this.$image = this.$el.find('img.image');
-        this.$open = this.$el.find('.open');
-        this.$con = this.$el.find('.con');
-        this.$open.bind('click',function(){
-            var temp = $(this).parent().children()[3];
-            temp = $(temp);
-            if(temp.hasClass('hi')){
-                temp.removeClass('hi');
-                $(this).children()[0].innerHTML = '收起';
-            }else{
-                temp.addClass('hi');
-                $(this).children()[0].innerHTML = '展开';
-            }
-        });
-        this.$image.load(_.bind(function() {
-            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
-                this.$image.width(), this.$image.height());
-
-            this.$image.css('width', size.width + 'px');
-            this.$image.css('margin-left', (-size.width / 2) + 'px')
-            this.$image.css('left', '50%');
-            this.$image.show();
-        }, this));
-    }
-});
-
-var NewsView = BaseView.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <div class='news-list-wrapper'>
-                <ul class='news-list list-unstyled'>
-            </div>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-        this.$list = this.$el.children('ul');
-
-        getNewsList(0, 10000).then(_.bind(function(data) {
-            _.each(data.objects, _.bind(function(article) {
-                var item = new NewsItem(article);
-                item.$el.appendTo(this.$list);
-            }, this));
-        }, this), function() {
-            // TODO
-        });
-    }
-});
-
-var PhotoListView = BaseView.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <div class='photo-list-wrapper'>
-                <ul class='photo-list clearfix list-unstyled'>
-                </ul>
-            </div>
-            */
-            console.log
-        }).trim());
-
-        this.setElement($(tpl(options))[0]);
-        this.$list = this.$el.find('.photo-list');
-
-        this.photoList = [];
-        getPhotoList(0, 20).then(_.bind(function(data) {
-            this.photoList = data.objects;
-            this.render();
-        }, this));
-    },
-
-    render: function() {
-        _.each(this.photoList, _.bind(function(photo) {
-            var view = new PhotoCell(photo);
-            view.on('click', _.bind(function() {
-                Backbone.history.navigate("/photo/" + photo.id, {
-                    replace: 'pushState',
-                    trigger: true
-                });
-            }, this));
-            view.$el.appendTo(this.$list);
-        }, this));
-    }
-});
-
-var TabView = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <ul class="nav nav-tabs header" role="tablist">
-                <li class="active"><a href="photo">正宗V海报</a></li>
-                <li><a href="video">正宗V视频</a></li>
-                <li><a href="news">正宗V资讯</a></li>
-            </ul> 
-             */
-            console.log
-        }).trim());
-
-        this.setElement($(tpl())[0]);
-
-        var self = this;
-
-        this.$el.on('click', 'a', function(e) {
-            e.preventDefault();
-
-            var $this = $(this);
-            var tab = $this.attr('href');
-            self.activate(tab);
-        });
-
-        this.views = {};
-    },
-
-    activate: function(tab) {
-        Backbone.history.navigate(tab, {
-            replace: 'replaceState'
-        });
-
-        var activeTab = this.getActiveTab();
-        if (activeTab === tab) {
-            return;
-        }
-
-        this.$el.find("a[href=" + activeTab + "]").parent().removeClass('active');
-        this.views[activeTab] && this.views[activeTab].hide();
-        this.$el.find("a[href=" + tab + "]").parent().addClass('active');
-        this.views[tab] && this.views[tab].show();
-    },
-
-    addTab: function(tabname, view) {
-        this.views[tabname] = view;
-    },
-
-    getActiveTab: function() {
-        var $link = this.$el.find('li.active').children('a');
-        return $link.length > 0 ? $link.attr('href') : '';
-    }
-});
-
-var $content, tabView, photoListView, newsView, videoListView;
-
-var FansRouter = Backbone.Router.extend({
-    routes: {
-        "photo": "photoList",
-        "photo/:id": "photo",
-        "video": "video",
-        "news": "news"
-    },
-
-    ensureTab: function(tab) {
-        if (!tabView) {
-            tabView = new TabView
-            tabView.$el.appendTo(document.body);
-
-            photoListView = new PhotoListView();
-            tabView.addTab('photo', photoListView);
-
-            videoListView = new VideoListView();
-            tabView.addTab('video', videoListView);
-
-            newsView = new NewsView();
-            tabView.addTab('news', newsView);
-
-            _.each([photoListView, videoListView, newsView], function(view) {
-                view.$el.hide();
-                view.$el.appendTo($content);
-            });
-        }
-
-        tabView.activate(tab);
-    },
-
-    photoList: function() {
-        this.ensureTab('photo');
-
-        if (!photoListView) {
-            photoListView = new PhotoListView();
-            photoListView.$el.appendTo($(".content"));
-        } else {
-            photoListView.show();
-        }
-    },
-
-    photo: function(id) {
-        if (!this.imageView) {
-            this.imageView = new ImageView();
-            this.imageView.$el.appendTo($(".content"));
-        }
-
-        console.log('set image id');
-        this.imageView.setImage(id);
-        console.log('fadeIn');
-        this.imageView.fadeIn();
-
-        this.imageView.on('exit', _.bind(function() {
-            this.imageView.fadeOut(_.bind(function() {
-                this.imageView.destroy();
-                this.imageView = null;
-            }, this));
-
-            Backbone.history.navigate("/photo", {
-                replace: 'replaceState',
-                trigger: true
-            });
-        }, this));
-    },
-
-    video: function(id) {
-        this.ensureTab('video');
-        if (photoListView) {
-            photoListView.hide();
-        }
-    },
-
-    news: function() {
-        this.ensureTab('news');
-        if (photoListView) {
-            photoListView.hide();
-        }
-    }
-});
-
-$(function() {
-    $content = $(".content");
-
-    new FansRouter();
-    Backbone.history.start({
-        pushState: true
-    });
-});
-
-},{"./components/velocity/velocity.js":11,"backbone":2,"image-sizing":3,"iscroll":4,"jquery":10,"multi-download":5,"multiline":6,"multpl":8,"underscore":9}],2:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 //     Backbone.js 1.1.2
 
 //     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -2124,7 +1608,7 @@ $(function() {
 
 }));
 
-},{"underscore":9}],3:[function(require,module,exports){
+},{"underscore":8}],2:[function(require,module,exports){
 function cover(outerWidth, outerHeight, indeedWidth, indeedHeight) {
 	if(outerWidth / outerHeight > indeedWidth / indeedHeight) {
 		return {
@@ -2143,7 +1627,7 @@ module.exports = {
 	cover: cover
 };
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /*! iScroll v5.1.2 ~ (c) 2008-2014 Matteo Spinelli ~ http://cubiq.org/license */
 (function (window, document, Math) {
 var rAF = window.requestAnimationFrame	||
@@ -4150,7 +3634,7 @@ if ( typeof module != 'undefined' && module.exports ) {
 }
 
 })(window, document, Math);
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 (function () {
 	'use strict';
 
@@ -4229,7 +3713,7 @@ if ( typeof module != 'undefined' && module.exports ) {
 	}
 })();
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 var stripIndent = require('strip-indent');
 
@@ -4255,7 +3739,7 @@ multiline.stripIndent = function (fn) {
 	return stripIndent(multiline(fn));
 };
 
-},{"strip-indent":7}],7:[function(require,module,exports){
+},{"strip-indent":6}],6:[function(require,module,exports){
 'use strict';
 module.exports = function (str) {
 	var match = str.match(/^[ \t]*(?=\S)/gm);
@@ -4273,7 +3757,7 @@ module.exports = function (str) {
 	return indent > 0 ? str.replace(re, '') : str;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var template = require('underscore').template;
 var multiline = require('multiline');
 
@@ -4282,7 +3766,7 @@ module.exports = function(fn) {
 }
 
 
-},{"multiline":6,"underscore":9}],9:[function(require,module,exports){
+},{"multiline":5,"underscore":8}],8:[function(require,module,exports){
 //     Underscore.js 1.6.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -5627,7 +5111,7 @@ module.exports = function(fn) {
   }
 }).call(this);
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (global){
 ;__browserify_shim_require__=require;(function browserifyShim(module, exports, require, define, browserify_shim__define__module__export__) {
 /*!
@@ -14825,8 +14309,8 @@ return jQuery;
 
 }).call(global, undefined, undefined, undefined, undefined, function defineExport(ex) { module.exports = ex; });
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],11:[function(require,module,exports){
+}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],10:[function(require,module,exports){
 (function (global){
 ;__browserify_shim_require__=require;(function browserifyShim(module, exports, require, define, browserify_shim__define__module__export__) {
 /*! VelocityJS.org (0.11.8). (C) 2014 Julian Shapiro. MIT @license: en.wikipedia.org/wiki/MIT_License */
@@ -15241,7 +14725,7 @@ return jQuery;
     Velocity.js
 ******************/
 
-/*! VelocityJS.org (0.11.9). (C) 2014 Julian Shapiro. MIT @license: en.wikipedia.org/wiki/MIT_License */
+/*! VelocityJS.org (0.11.8). (C) 2014 Julian Shapiro. MIT @license: en.wikipedia.org/wiki/MIT_License */
 
 ;(function (factory) {    
     /* CommonJS module. */
@@ -15260,12 +14744,8 @@ return jQuery;
     }
 }(function (jQuery) {
 return function (global, window, document, undefined) {
-
-    /***************
-        Summary
-    ***************/
-
     /*
+    Structure:
     - CSS: CSS stack that works independently from the rest of Velocity.
     - animate(): Core animation method that iterates over the targeted elements and queues the incoming call onto each element individually.
       - Pre-Queueing: Prepare the element for animation by instantiating its data cache and processing the call's options.
@@ -15317,6 +14797,8 @@ return function (global, window, document, undefined) {
             return setTimeout(function() { callback(timeCurrent + timeDelta); }, timeDelta);
         };
     })();
+
+    var ticker = window.requestAnimationFrame || rAFShim;
 
     /* Array compacting. Copyright Lo-Dash. MIT License: https://github.com/lodash/lodash/blob/master/LICENSE.txt */
     function compactSparseArray (array) {
@@ -15524,7 +15006,7 @@ return function (global, window, document, undefined) {
         hook: null, /* Defined below. */
         /* Set to true to force a duration of 1ms for all animations so that UI testing can be performed without waiting on animations to complete. */
         mock: false,
-        version: { major: 0, minor: 11, patch: 9 },
+        version: { major: 0, minor: 11, patch: 8 },
         /* Set to 1 or 2 (most verbose) to output debug info to console. */
         debug: false
     };
@@ -15680,6 +15162,7 @@ return function (global, window, document, undefined) {
     /* Given a tension, friction, and duration, a simulation at 60FPS will first run without a defined duration in order to calculate the full path. A second pass
        then adjusts the time delta -- using the relation between actual time and duration -- to calculate the path for the duration-constrained animation. */
     var generateSpringRK4 = (function () {
+
         function springAccelerationForState (state) {
             return (-state.tension * state.x) - (state.friction * state.v);
         }
@@ -15771,7 +15254,6 @@ return function (global, window, document, undefined) {
         /* Bonus "spring" easing, which is a less exaggerated version of easeInOutElastic. */
         spring: function(p) { return 1 - (Math.cos(p * 4.5 * Math.PI) * Math.exp(-p * 6)); }
     };
-
     $.each(
         [
             /* CSS3's named easing types. */
@@ -17007,6 +16489,14 @@ return function (global, window, document, undefined) {
                             $.each(createElementsArray(elements), function(l, element) {                                
                                 /* Check that this call was applied to the target element. */
                                 if (element === activeElement) {
+                                    if (Data(element)) {
+                                        /* Since "reverse" uses cached start values (the previous call's endValues),
+                                           these values must be changed to reflect the final value that the elements were actually tweened to. */
+                                        $.each(Data(element).tweensContainer, function(m, activeTween) {
+                                            activeTween.endValue = activeTween.currentValue;
+                                        });
+                                    }
+
                                     /* Optionally clear the remaining queued calls. */
                                     if (options !== undefined) {
                                         /* Iterate through the items in the element's queue. */
@@ -17021,14 +16511,6 @@ return function (global, window, document, undefined) {
 
                                         /* Clearing the $.queue() array is achieved by resetting it to []. */
                                         $.queue(element, queueName, []);
-                                    }
-
-                                    if (Data(element) && queueName === "") {
-                                        /* Since "reverse" uses cached start values (the previous call's endValues),
-                                           these values must be changed to reflect the final value that the elements were actually tweened to. */
-                                        $.each(Data(element).tweensContainer, function(m, activeTween) {
-                                            activeTween.endValue = activeTween.currentValue;
-                                        });
                                     }
 
                                     callsToStop.push(i);
@@ -17063,39 +16545,38 @@ return function (global, window, document, undefined) {
 
                 /* Check if a string matches a registered sequence (see Sequences above). */
                 } else if (Type.isString(propertiesMap) && Velocity.Sequences[propertiesMap]) {
-                    var opts = $.extend({}, options),
-                        durationOriginal = opts.duration,
-                        delayOriginal = opts.delay || 0;
+                    var durationOriginal = options.duration,
+                        delayOriginal = options.delay || 0;
 
                     /* If the backwards option was passed in, reverse the element set so that elements animate from the last to the first. */
-                    if (opts.backwards === true) {
+                    if (options.backwards === true) {
                         elements = (Type.isWrapped(elements) ? [].slice.call(elements) : elements).reverse();
                     }
 
                     /* Individually trigger the sequence for each element in the set to prevent users from having to handle iteration logic in their sequence. */
                     $.each(createElementsArray(elements), function(elementIndex, element) {
                         /* If the stagger option was passed in, successively delay each element by the stagger value (in ms). Retain the original delay value. */
-                        if (parseFloat(opts.stagger)) {
-                            opts.delay = delayOriginal + (parseFloat(opts.stagger) * elementIndex);
-                        } else if (Type.isFunction(opts.stagger)) {
-                            opts.delay = delayOriginal + opts.stagger.call(element, elementIndex, elementsLength);
+                        if (parseFloat(options.stagger)) {
+                            options.delay = delayOriginal + (parseFloat(options.stagger) * elementIndex);
+                        } else if (Type.isFunction(options.stagger)) {
+                            options.delay = delayOriginal + options.stagger.call(element, elementIndex, elementsLength);
                         }
 
-                        /* If the drag option was passed in, successively increase/decrease (depending on the presense of opts.backwards)
+                        /* If the drag option was passed in, successively increase/decrease (depending on the presense of options.backwards)
                            the duration of each element's animation, using floors to prevent producing very short durations. */
-                        if (opts.drag) {
+                        if (options.drag) {
                             /* Default the duration of UI pack effects (callouts and transitions) to 1000ms instead of the usual default duration of 400ms. */
-                            opts.duration = parseFloat(durationOriginal) || (/^(callout|transition)/.test(propertiesMap) ? 1000 : DURATION_DEFAULT);
+                            options.duration = parseFloat(durationOriginal) || (/^(callout|transition)/.test(propertiesMap) ? 1000 : DURATION_DEFAULT);
 
                             /* For each element, take the greater duration of: A) animation completion percentage relative to the original duration,
                                B) 75% of the original duration, or C) a 200ms fallback (in case duration is already set to a low value).
                                The end result is a baseline of 75% of the sequence's duration that increases/decreases as the end of the element set is approached. */
-                            opts.duration = Math.max(opts.duration * (opts.backwards ? 1 - elementIndex/elementsLength : (elementIndex + 1) / elementsLength), opts.duration * 0.75, 200);
+                            options.duration = Math.max(options.duration * (options.backwards ? 1 - elementIndex/elementsLength : (elementIndex + 1) / elementsLength), options.duration * 0.75, 200);
                         }
 
-                        /* Pass in the call's opts object so that the sequence can optionally extend it. It defaults to an empty object instead of null to
-                           reduce the opts checking logic required inside the sequence. */
-                        Velocity.Sequences[propertiesMap].call(element, element, opts || {}, elementIndex, elementsLength, elements, promiseData.promise ? promiseData : undefined);
+                        /* Pass in the call's options object so that the sequence can optionally extend it. It defaults to an empty object instead of null to
+                           reduce the options checking logic required inside the sequence. */
+                        Velocity.Sequences[propertiesMap].call(element, element, options || {}, elementIndex, elementsLength, elements, promiseData.promise ? promiseData : undefined);
                     });
 
                     /* Since the animation logic resides within the sequence's own code, abort the remainder of this call.
@@ -17765,32 +17246,30 @@ return function (global, window, document, undefined) {
 
                             if (!sameEmRatio || !samePercentRatio) {
                                 var dummy = Data(element).isSVG ? document.createElementNS("http://www.w3.org/2000/svg", "rect") : document.createElement("div");
-                                
                                 Velocity.init(dummy);
                                 sameRatioIndicators.myParent.appendChild(dummy);
 
+                                Velocity.CSS.setPropertyValue(dummy, "position", sameRatioIndicators.position);
+                                Velocity.CSS.setPropertyValue(dummy, "fontSize", sameRatioIndicators.fontSize);
                                 /* To accurately and consistently calculate conversion ratios, the element's cascaded overflow and box-sizing are stripped.
                                    Similarly, since width/height can be artificially constrained by their min-/max- equivalents, these are controlled for as well. */
                                 /* Note: Overflow must be also be controlled for per-axis since the overflow property overwrites its per-axis values. */
-                                $.each([ "overflow", "overflowX", "overflowY" ], function(i, property) {
-                                    Velocity.CSS.setPropertyValue(dummy, property, "hidden");
-                                });
-                                Velocity.CSS.setPropertyValue(dummy, "position", sameRatioIndicators.position);
-                                Velocity.CSS.setPropertyValue(dummy, "fontSize", sameRatioIndicators.fontSize);
+                                Velocity.CSS.setPropertyValue(dummy, "overflow", "hidden");
+                                Velocity.CSS.setPropertyValue(dummy, "overflowX", "hidden");
+                                Velocity.CSS.setPropertyValue(dummy, "overflowY", "hidden");
                                 Velocity.CSS.setPropertyValue(dummy, "boxSizing", "content-box");
-                                
+                                /* paddingLeft arbitrarily acts as our proxy property for the em ratio. */
+                                Velocity.CSS.setPropertyValue(dummy, "paddingLeft", measurement + "em");
                                 /* width and height act as our proxy properties for measuring the horizontal and vertical % ratios. */
                                 $.each([ "minWidth", "maxWidth", "width", "minHeight", "maxHeight", "height" ], function(i, property) {
                                     Velocity.CSS.setPropertyValue(dummy, property, measurement + "%");
                                 });
-                                /* paddingLeft arbitrarily acts as our proxy property for the em ratio. */
-                                Velocity.CSS.setPropertyValue(dummy, "paddingLeft", measurement + "em");
 
                                 /* Divide the returned value by the measurement to get the ratio between 1% and 1px. Default to 1 since working with 0 can produce Infinite. */
                                 unitRatios.percentToPxWidth = callUnitConversionData.lastPercentToPxWidth = (parseFloat(CSS.getPropertyValue(dummy, "width", null, true)) || 1) / measurement; /* GET */
                                 unitRatios.percentToPxHeight = callUnitConversionData.lastPercentToPxHeight = (parseFloat(CSS.getPropertyValue(dummy, "height", null, true)) || 1) / measurement; /* GET */
                                 unitRatios.emToPx = callUnitConversionData.lastEmToPx = (parseFloat(CSS.getPropertyValue(dummy, "paddingLeft")) || 1) / measurement; /* GET */
-                                
+
                                 sameRatioIndicators.myParent.removeChild(dummy);
                             } else {
                                 unitRatios.emToPx = callUnitConversionData.lastEmToPx;
@@ -17849,10 +17328,10 @@ return function (global, window, document, undefined) {
                                 /* By this point, we cannot avoid unit conversion (it's undesirable since it causes layout thrashing).
                                    If we haven't already, we trigger calculateUnitRatios(), which runs once per element per call. */
                                 elementUnitConversionData = elementUnitConversionData || calculateUnitRatios();
-                                
+
                                 /* The following RegEx matches CSS properties that have their % values measured relative to the x-axis. */
                                 /* Note: W3C spec mandates that all of margin and padding's properties (even top and bottom) are %-relative to the *width* of the parent element. */
-                                var axis = (/margin|padding|left|right|width|text|word|letter/i.test(property) || /X$/.test(property) || property === "x") ? "x" : "y";
+                                var axis = (/margin|padding|left|right|width|text|word|letter/i.test(property) || /X$/.test(property)) ? "x" : "y";
 
                                 /* In order to avoid generating n^2 bespoke conversion functions, unit conversion is a two-step process:
                                    1) Convert startValue into pixels. 2) Convert this new pixel value into endValue's unit type. */
@@ -17948,12 +17427,11 @@ return function (global, window, document, undefined) {
                     /* The call array houses the tweensContainers for each element being animated in the current call. */
                     call.push(tweensContainer);
 
-                    /* Store the tweensContainer and options if we're working on the default effects queue, so that they can be used by the reverse command. */
-                    if (opts.queue === "") {
+                    /* Store the tweensContainer on the element, plus the current call's opts so that Velocity can reference this data the next time this element is animated. */
+                    if (opts.queue !== false) {
                         Data(element).tweensContainer = tweensContainer;
-                        Data(element).opts = opts;
                     }
-
+                    Data(element).opts = opts;
                     /* Switch on the element's animating flag. */
                     Data(element).isAnimating = true;
 
@@ -18101,8 +17579,6 @@ return function (global, window, document, undefined) {
     /**************
         Timing
     **************/
-
-    var ticker = window.requestAnimationFrame || rAFShim;
 
     /* Inactive browser tabs pause rAF, which results in all active animations immediately sprinting to their completion states when the tab refocuses.
        To get around this, we dynamically switch rAF to setTimeout (which the browser *doesn't* pause) when the tab loses focus. We skip this for mobile
@@ -18326,6 +17802,7 @@ return function (global, window, document, undefined) {
                 if (opts.display !== undefined && opts.display !== "none") {
                     Velocity.State.calls[i][2].display = false;
                 }
+
                 if (opts.visibility && opts.visibility !== "hidden") {
                     Velocity.State.calls[i][2].visibility = false;
                 }
@@ -18554,10 +18031,6 @@ return function (global, window, document, undefined) {
                 /* If the user passed in a begin callback, fire it now. */
                 begin && begin.call(element, element);
 
-                /* Force vertical overflow content to clip so that sliding works as expected. */
-                inlineValues.overflowY = element.style.overflowY;
-                element.style.overflowY = "hidden";
-
                 /* Cache the elements' original vertical dimensional property values so that we can animate back to them. */
                 for (var property in computedValues) {
                     /* Cache all inline values, we reset to upon animation completion. */
@@ -18589,14 +18062,17 @@ return function (global, window, document, undefined) {
     $.each([ "In", "Out" ], function(i, direction) {
         Velocity.Sequences["fade" + direction] = function (element, options, elementsIndex, elementsSize, elements, promiseData) {
             var opts = $.extend({}, options),
-                propertiesMap = { opacity: (direction === "In") ? 1 : 0 },
-                originalComplete = opts.complete;
+                propertiesMap = {
+                    opacity: (direction === "In") ? 1 : 0
+                };
 
             /* Since sequences are triggered individually for each element in the animated set, avoid repeatedly triggering
                callbacks by firing them only when the final element has been reached. */
             if (elementsIndex !== elementsSize - 1) {
                 opts.complete = opts.begin = null;
             } else {
+                var originalComplete = opts.complete;
+
                 opts.complete = function() {
                     if (originalComplete) {
                         originalComplete.call(element, element);
@@ -18633,5 +18109,521 @@ will produce an inaccurate conversion value. The same issue exists with the cx/c
 
 }).call(global, undefined, undefined, undefined, undefined, function defineExport(ex) { module.exports = ex; });
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[1]);
+}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],11:[function(require,module,exports){
+var multiline = require("multiline");
+var _ = require("underscore");
+var multpl = require('multpl');
+var $ = require("jquery");
+var sizing = require('image-sizing');
+var Backbone = require("backbone");
+Backbone.$ = $;
+
+var download = require("multi-download");
+var IScroll = require("iscroll");
+var Velocity = require("./components/velocity/velocity.js");
+
+var CONTENT_ID = 1;
+
+function mark(id) {
+    // TODO
+}
+
+function unmark(id) {
+    // TODO
+}
+
+function getVideoList(offset, limit) {
+    return $.get("/API/output/video/?format=json&content=" + CONTENT_ID);
+}
+
+function getPhotoList(offset, limit) {
+    return $.get("/API/output/image/?format=json&content=" + CONTENT_ID);
+}
+
+function getNewsList(offset, limit) {
+    return $.get("/API/output/article/?format=json&content=" + CONTENT_ID);
+}
+
+function getPhoto(id) {
+    return $.get("/API/output/image/" + id + "/?format=json&content=");
+}
+
+var ViewProto = {
+    hide: function() {
+        this.$el.hide()
+    },
+
+    show: function() {
+        this.$el.show();
+    }
+}
+
+var BaseView = Backbone.View.extend(ViewProto);
+
+var ImageView = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = _.template(multiline(function() {
+            /*@preserve
+            <div class='photo-view'>
+                <div class='photo-wrapper'>
+                </div>
+                <div class='toolbar'>
+                    <div class='share'><span class='glyphicon glyphicon-share'></span></div>
+                    <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
+                    <div class='download'><span class='glyphicon glyphicon-download-alt'></span></div>
+                <div>
+            </div>
+            */
+            console.log
+        }).trim());
+
+        this.setElement($(tpl(options))[0]);
+        this.$wrapper = this.$el.find('.photo-wrapper')
+
+        this.$share = this.$el.find('.share');
+        this.$heart = this.$el.find('.heart');
+        this.$download = this.$el.find('.download');
+
+        this.$download.click(_.bind(function() {
+            download([this.imageUrl]);
+        }, this));
+
+        this.$share.click(_.bind(function() {
+            // TODO show share tip
+        }, this));
+
+        this.$heart.click(_.bind(function() {
+            if (!this.$heart.hasClass('up')) {
+                this.$heart.addClass('up');
+                mark(this.imageId);
+                this.markImage(this.imageId);
+            } else {
+                unmark(this.imageId);
+                this.unmarkImage(this.imageId);
+                this.$heart.removeClass('up');
+            }
+
+            Velocity(this.$heart[0], {
+                'font-size': 24,
+                'padding-top': 8
+            }, {
+                'duration': 200
+            });
+
+            Velocity(this.$heart[0], "reverse", {
+                'duration': 200
+            });
+        }, this));
+
+        this.$wrapper.click(_.bind(function() {
+            this.trigger('exit');
+        }, this));
+    },
+
+    isImageMarkd: function(id) {
+        return window.localStorage ? localStorage.getItem('image-' + id) === "true" : false;
+    },
+
+    markImage: function(id) {
+        if (window.localStorage) {
+            localStorage.setItem('image-' + id, true);
+        }
+    },
+
+    unmarkImage: function(id) {
+        if (window.localStorage) {
+            localStorage.setItem('image-' + id, false);
+        }
+    },
+
+    setImage: function(id) {
+        this.imageId = id;
+
+        if (this.isImageMarkd(id)) {
+            this.$heart.addClass('up');
+        }
+
+        getPhoto(id).then(_.bind(function(data) {
+            this.imageUrl = data.image;
+            this.$wrapper.html("");
+            this.$image = $("<img src='" + data.image + "'>").appendTo(this.$wrapper);
+
+            this.$image.load(_.bind(function() {
+                this.onImageLoad();
+            }, this));
+        }, this));
+    },
+
+    onImageLoad: function() {
+        var imgWidth = this.$image.width();
+        var imgHeight = this.$image.height();
+
+        var wrapperWidth = this.$wrapper.width();
+        var wrapperHeight = this.$wrapper.height();
+
+        console.log(imgWidth, imgHeight, wrapperWidth, wrapperHeight);
+        this.$wrapper.scrollTop(-(wrapperHeight - imgHeight) / 2);
+        if (imgWidth / imgHeight > wrapperWidth / wrapperHeight) {
+            var width = imgWidth * wrapperHeight / imgHeight;
+            this.$image.height(wrapperHeight);
+            this.$wrapper.scrollLeft(-(wrapperWidth - width) / 2);
+        } else {
+            this.$image.width(wrapperWidth);
+            this.$wrapper.scrollTop(0);
+        }
+    },
+
+    fadeIn: function() {
+        Velocity(this.$el[0], "fadeIn");
+    },
+
+    fadeOut: function(callback) {
+        Velocity(this.$el[0], "fadeOut", {
+            complete: callback
+        });
+    },
+
+    destroy: function() {
+        this.$el.remove();
+    }
+});
+
+var PhotoCell = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = _.template(multiline(function() {
+            /*@preserve
+            <li class='photo-item'>
+                <div class='photo-item-inner'>
+                    <div class='photo-wrapper'>
+                        <img src='<%= image %>' onError="this.src='http://placehold.it/200x360/fff&text=!'">
+                    </div>
+                    <div class='title'><%= name %></div>
+                    <div class='likes'>
+                        <span class='glyphicon glyphicon-heart'></span>&nbsp;<%= likes %>
+                    </div>
+                </div>
+            </li>
+            */
+            console.log
+        }).trim()); 
+        this.setElement($(tpl(options))[0]);
+        this.$el.click(_.bind(function() {
+            this.trigger('click');
+        }, this));
+    }
+});
+
+var VideoItem = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <li class='video-item'>
+                <div class='title'><%= name %></div>
+                <div class='date'>2014-08-09</div>
+                <div class='cover-wrapper'>
+                    <div class='cover'>
+                        <img class='image' style='display: none' src='<%= image %>'>
+                        <a href='<%= url %>' class='btn-play'></a>
+                    </div>
+                </div>
+                <div class='description'><%= description %></div>
+            </li>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+
+        this.$wrapper = this.$el.find('.cover');
+        this.$image = this.$el.find('img.image');
+        this.$image.load(_.bind(function() {
+            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
+                this.$image.width(), this.$image.height());
+
+            this.$image.css('width', size.width + 'px');
+            this.$image.css('margin-left', (-size.width / 2) + 'px')
+            this.$image.css('left', '50%');
+            this.$image.show();
+        }, this));
+    }
+});
+
+var VideoListView = BaseView.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <div class='video-list-wrapper'>
+                <ul class='video-list list-unstyled'>
+            </div>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+        this.$list = this.$el.children('ul');
+
+        getVideoList(0, 10000).then(_.bind(function(data) {
+            _.each(data.objects, _.bind(function(video) {
+                var item = new VideoItem(video);
+                item.$el.appendTo(this.$list);
+            }, this));
+        }, this), function() {
+            // TODO
+        });
+    }
+});
+
+var NewsItem = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <li class='news-item'>
+                <div class='title'><%= name %></div>
+                <div class='date'>2014-08-09</div>
+                <div class='cover-wrapper'>
+                    <div class='cover'>
+                        <img class='image' style='display: none' src='<%= image %>'>
+                        <a href='#' class='btn-play'></a>
+                    </div>
+                </div>
+                <div class='con hi'><%=contents %></div>
+                <div class='open'><span>展开</span></div>
+            </li>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+
+        this.$wrapper = this.$el.find('.cover');
+        this.$image = this.$el.find('img.image');
+        this.$open = this.$el.find('.open');
+        this.$con = this.$el.find('.con');
+        this.$open.bind('click',function(){
+            var temp = $(this).parent().children()[3];
+            temp = $(temp);
+            if(temp.hasClass('hi')){
+                temp.removeClass('hi');
+                $(this).children()[0].innerHTML = '收起';
+            }else{
+                temp.addClass('hi');
+                $(this).children()[0].innerHTML = '展开';
+            }
+        });
+        this.$image.load(_.bind(function() {
+            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
+                this.$image.width(), this.$image.height());
+
+            this.$image.css('width', size.width + 'px');
+            this.$image.css('margin-left', (-size.width / 2) + 'px')
+            this.$image.css('left', '50%');
+            this.$image.show();
+        }, this));
+    }
+});
+
+var NewsView = BaseView.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <div class='news-list-wrapper'>
+                <ul class='news-list list-unstyled'>
+            </div>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+        this.$list = this.$el.children('ul');
+
+        getNewsList(0, 10000).then(_.bind(function(data) {
+            _.each(data.objects, _.bind(function(article) {
+                var item = new NewsItem(article);
+                item.$el.appendTo(this.$list);
+            }, this));
+        }, this), function() {
+            // TODO
+        });
+    }
+});
+
+var PhotoListView = BaseView.extend({
+    initialize: function(options) {
+        var tpl = _.template(multiline(function() {
+            /*@preserve
+            <div class='photo-list-wrapper'>
+                <ul class='photo-list clearfix list-unstyled'>
+                </ul>
+            </div>
+            */
+            console.log
+        }).trim());
+
+        this.setElement($(tpl(options))[0]);
+        this.$list = this.$el.find('.photo-list');
+
+        this.photoList = [];
+        getPhotoList(0, 20).then(_.bind(function(data) {
+            this.photoList = data.objects;
+            this.render();
+        }, this));
+    },
+
+    render: function() {
+        _.each(this.photoList, _.bind(function(photo) {
+            var view = new PhotoCell(photo);
+            view.on('click', _.bind(function() {
+                Backbone.history.navigate("/photo/" + photo.id, {
+                    replace: 'pushState',
+                    trigger: true
+                });
+            }, this));
+            view.$el.appendTo(this.$list);
+        }, this));
+    }
+});
+
+var TabView = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = _.template(multiline(function() {
+            /*@preserve
+            <ul class="nav nav-tabs header" role="tablist">
+                <li class="active"><a href="photo">正宗V海报</a></li>
+                <li><a href="video">正宗V视频</a></li>
+                <li><a href="news">正宗V资讯</a></li>
+            </ul> 
+             */
+            console.log
+        }).trim());
+
+        this.setElement($(tpl())[0]);
+
+        var self = this;
+
+        this.$el.on('click', 'a', function(e) {
+            e.preventDefault();
+
+            var $this = $(this);
+            var tab = $this.attr('href');
+            self.activate(tab);
+        });
+
+        this.views = {};
+    },
+
+    activate: function(tab) {
+        Backbone.history.navigate(tab, {
+            replace: 'replaceState'
+        });
+
+        var activeTab = this.getActiveTab();
+        if (activeTab === tab) {
+            return;
+        }
+
+        this.$el.find("a[href=" + activeTab + "]").parent().removeClass('active');
+        this.views[activeTab] && this.views[activeTab].hide();
+        this.$el.find("a[href=" + tab + "]").parent().addClass('active');
+        this.views[tab] && this.views[tab].show();
+    },
+
+    addTab: function(tabname, view) {
+        this.views[tabname] = view;
+    },
+
+    getActiveTab: function() {
+        var $link = this.$el.find('li.active').children('a');
+        return $link.length > 0 ? $link.attr('href') : '';
+    }
+});
+
+var $content, tabView, photoListView, newsView, videoListView;
+
+var FansRouter = Backbone.Router.extend({
+    routes: {
+        "photo": "photoList",
+        "photo/:id": "photo",
+        "video": "video",
+        "news": "news"
+    },
+
+    ensureTab: function(tab) {
+        if (!tabView) {
+            tabView = new TabView
+            tabView.$el.appendTo(document.body);
+
+            photoListView = new PhotoListView();
+            tabView.addTab('photo', photoListView);
+
+            videoListView = new VideoListView();
+            tabView.addTab('video', videoListView);
+
+            newsView = new NewsView();
+            tabView.addTab('news', newsView);
+
+            _.each([photoListView, videoListView, newsView], function(view) {
+                view.$el.hide();
+                view.$el.appendTo($content);
+            });
+        }
+
+        tabView.activate(tab);
+    },
+
+    photoList: function() {
+        this.ensureTab('photo');
+
+        if (!photoListView) {
+            photoListView = new PhotoListView();
+            photoListView.$el.appendTo($(".content"));
+        } else {
+            photoListView.show();
+        }
+    },
+
+    photo: function(id) {
+        if (!this.imageView) {
+            this.imageView = new ImageView();
+            this.imageView.$el.appendTo($(".content"));
+        }
+
+        console.log('set image id');
+        this.imageView.setImage(id);
+        console.log('fadeIn');
+        this.imageView.fadeIn();
+
+        this.imageView.on('exit', _.bind(function() {
+            this.imageView.fadeOut(_.bind(function() {
+                this.imageView.destroy();
+                this.imageView = null;
+            }, this));
+
+            Backbone.history.navigate("/photo", {
+                replace: 'replaceState',
+                trigger: true
+            });
+        }, this));
+    },
+
+    video: function(id) {
+        this.ensureTab('video');
+        if (photoListView) {
+            photoListView.hide();
+        }
+    },
+
+    news: function() {
+        this.ensureTab('news');
+        if (photoListView) {
+            photoListView.hide();
+        }
+    }
+});
+
+$(function() {
+    $content = $(".content");
+
+    new FansRouter();
+    Backbone.history.start({
+        pushState: true
+    });
+});
+
+},{"./components/velocity/velocity.js":10,"backbone":1,"image-sizing":2,"iscroll":3,"jquery":9,"multi-download":4,"multiline":5,"multpl":7,"underscore":8}]},{},[11])

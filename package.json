@@ -46,10 +46,12 @@
   },
   "browser": {
     "jquery": "./public/components/jquery/dist/jquery.js",
-    "velocity": "./public/components/velocity/velocity.js"
+    "velocity": "./public/components/velocity/jquery.velocity.js"
   },
   "browserify-shim": {
     "jquery": "$",
-    "velocity": "Velocity"
+    "velocity": {
+      "depends": ["jquery:$"]
+    }
   }
 }

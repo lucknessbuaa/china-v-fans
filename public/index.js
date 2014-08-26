@@ -7,8 +7,7 @@ var Backbone = require("backbone");
 Backbone.$ = $;
 
 var download = require("multi-download");
-var IScroll = require("iscroll");
-var Velocity = require("./components/velocity/velocity.js");
+require("velocity");
 
 var CONTENT_ID = 1;
 
@@ -91,14 +90,14 @@ var ImageView = Backbone.View.extend({
                 this.$heart.removeClass('up');
             }
 
-            Velocity(this.$heart[0], {
+            this.$heart.velocity({
                 'font-size': 24,
                 'padding-top': 8
             }, {
                 'duration': 200
             });
 
-            Velocity(this.$heart[0], "reverse", {
+            this.$heart.velocity("reverse", {
                 'duration': 200
             });
         }, this));
@@ -162,11 +161,11 @@ var ImageView = Backbone.View.extend({
     },
 
     fadeIn: function() {
-        Velocity(this.$el[0], "fadeIn");
+        this.$el.velocity("fadeIn");
     },
 
     fadeOut: function(callback) {
-        Velocity(this.$el[0], "fadeOut", {
+        this.$el.velocity("fadeOut", {
             complete: callback
         });
     },
@@ -272,7 +271,11 @@ var NewsItem = Backbone.View.extend({
                         <a href='#' class='btn-play'></a>
                     </div>
                 </div>
-                <div class='con hi'><%=contents %></div>
+                <div class='con hi'>
+                    <div class='content-wrapper'>
+                        <%=contents %>
+                    </div>
+                </div>
                 <div class='open'><span>展开</span></div>
             </li>
             */
@@ -284,18 +287,25 @@ var NewsItem = Backbone.View.extend({
         this.$image = this.$el.find('img.image');
         this.$open = this.$el.find('.open');
         this.$con = this.$el.find('.con');
-        this.$open.bind('click',function(){
+        this.$open.click(function() {
             var temp = $(this).parent().children()[3];
-            temp = $(temp);
-            if(temp.hasClass('hi')){
-                temp.removeClass('hi');
+            var $temp = $(temp);
+            if ($temp.hasClass('hi')) {
+                $temp.removeClass('hi');
+                $temp.velocity({
+                    'max-height': ($('.content-wrapper').outerHeight() + 8) + 'px'
+                });
                 $(this).children()[0].innerHTML = '收起';
-            }else{
-                temp.addClass('hi');
+            } else {
+                $temp.addClass('hi');
+                $temp.velocity({
+                    'max-height': '65px'
+                });
                 $(this).children()[0].innerHTML = '展开';
             }
         });
         this.$image.load(_.bind(function() {
+            console.log('resizing image', this.$wrapper.width(), this.$wrapper.height(), this.$image.width(), this.$image.height());
             var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
                 this.$image.width(), this.$image.height());
 

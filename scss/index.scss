@@ -270,15 +270,15 @@ $nav-active-color: #9A1011;
                 color: darken($color, 10%);
                 overflow: hidden;
                 text-overflow: ellipsis;
+                max-height: 65px;
 
-                p{
+                p {
                     margin:0px;
                     color:#5e5e5e;
                 }
             }
 
             .hi{
-                max-height: 65px;
             }
 
             .open{

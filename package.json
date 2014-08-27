@@ -9,15 +9,20 @@
   "author": "Jarvys <yuhan534@126.com> (https://jarvys.github.io/)",
   "license": "ISC",
   "devDependencies": {
-    "browserify-shim": "^3.6.0",
+    "brfs": "^1.2.0",
+    "browserify": "^5.10.1",
+    "browserify-shim": "^3.7.0",
     "gulp": "^3.8.7",
     "gulp-base64": "^0.1.1",
     "gulp-changed": "^1.0.0",
+    "gulp-concat": "^2.3.4",
     "gulp-imagemin": "^1.0.0",
     "gulp-nodemon": "~1.0.4",
     "gulp-sass": "^0.7.3",
     "gulp-tinypng": "^1.0.2",
-    "gulp-util": "^3.0.0"
+    "gulp-uglify": "^0.3.2",
+    "gulp-util": "^3.0.0",
+    "stringify": "^2.2.0"
   },
   "optionalDependencies": {
     "display-notification": "^1.0.1"
@@ -38,22 +43,8 @@
     "vinyl-source-stream": "^0.1.1",
     "transform": "~1.1.2"
   },
-  "browserify": {
-    "transform": [
-      "browserify-shim"
-    ]
-  },
-  "browser": {
-    "jquery": "./public/components/jquery/dist/jquery.js",
-    "velocity": "./public/components/velocity/jquery.velocity.js",
-    "spin": "./public/components/spin.js/spin.js"
-  },
   "browserify-shim": {
-    "jquery": "$",
-    "velocity": {
-      "depends": [
-        "jquery:$"
-      ]
-    }
+    "jquery": "global:$",
+    "velocity": "global:Velocity"
   }
 }

@@ -1,14 +1,15 @@
 var multiline = require("multiline");
 var _ = require("underscore");
 var multpl = require('multpl');
-var $ = require("jquery");
 var sizing = require('image-sizing');
+var download = require("multi-download");
+var fs = require('fs');
+
+var $ = require("jquery");
 var Backbone = require("backbone");
 Backbone.$ = $;
-
-var download = require("multi-download");
 require("velocity");
-require("spin");
+//require("spin");
 
 var CONTENT_ID = 1;
 
@@ -203,22 +204,7 @@ var PhotoCell = Backbone.View.extend({
 
 var VideoItem = Backbone.View.extend({
     initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <li class='video-item'>
-                <div class='title'><%= name %></div>
-                <div class='date'>2014-08-09</div>
-                <div class='cover-wrapper'>
-                    <div class='cover'>
-                        <img class='image' style='display: none' src='<%= image %>'>
-                        <a href='<%= url %>' class='btn-play'></a>
-                    </div>
-                </div>
-                <div class='description'><%= description %></div>
-            </li>
-            */
-            console.log
-        });
+        var tpl = _.template(require("./tpl/videoItem.html").trim());
         this.setElement($(tpl(options).trim()));
 
         this.$wrapper = this.$el.find('.cover');
@@ -247,8 +233,8 @@ var VideoListView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
-        var target = document.getElementById('load');
-        new Spinner({color:'#fff', lines: 12}).spin(target);
+        //var target = document.getElementById('load');
+        //new Spinner({color:'#fff', lines: 12}).spin(target);
 
         getVideoList(0, 10000).then(_.bind(function(data) {
             _.each(data.objects, _.bind(function(video) {

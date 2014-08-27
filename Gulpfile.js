@@ -5,10 +5,12 @@ var imagemin = require('gulp-imagemin');
 var nodemon = require('gulp-nodemon');
 var tinypng = require('gulp-tinypng');
 var sass = require('gulp-sass');
+var concat = require('gulp-concat');
+var uglify = require('gulp-uglify');
 var base64 = require('gulp-base64');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream')
-
+var stringify = require('stringify');
 
 try {
     var notify = require('display-notification');
@@ -27,24 +29,40 @@ function onError(fn) {
         });
 
         if (fn) {
-            fn.call(null, err);
+            fn.call(err);
         }
     }
 }
 
-gulp.task('scripts', function() {
-    var stream = browserify('./public/index.js').bundle();
-    return stream.on('error', onError(function() {
+gulp.task('browserify', function() {
+    var bundle = browserify('./public/index.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
+    return stream.on('error', onError(function(err) {
             stream.end();
         }))
         .pipe(source('index.js'))
         .pipe(gulp.dest('./public/build'))
         .on('end', function() {
             notify({
-                'title': 'scripts',
+                'title': 'browserify',
                 'subtitle': 'finish compiling scripts'
             });
-        })
+        });
+});
+
+gulp.task('scripts', ['browserify'], function() {
+    return gulp.src([
+            './public/components/jquery/dist/jquery.js',
+            './public/components/velocity/jquery.velocity.js',
+            './public/build/index.js'
+        ]).pipe(concat('index.js'))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
+        .pipe(gulp.dest('public/build'));
 });
 
 gulp.task('sass', function() {
@@ -77,7 +95,7 @@ gulp.task('image-other', function() {
 });
 
 gulp.task("watch-scripts", function() {
-    gulp.watch("public/index.js", ["scripts"]);
+    gulp.watch(["public/index.js", "package.json"], ["scripts"]);
 });
 
 gulp.task("watch-images", function() {

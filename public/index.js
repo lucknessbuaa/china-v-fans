@@ -1,12 +1,12 @@
 var multiline = require("multiline");
 var _ = require("underscore");
 var multpl = require('multpl');
-var $ = require("jquery");
 var sizing = require('image-sizing');
+var download = require("multi-download");
+
+var $ = require("jquery");
 var Backbone = require("backbone");
 Backbone.$ = $;
-
-var download = require("multi-download");
 require("velocity");
 
 var CONTENT_ID = 1;

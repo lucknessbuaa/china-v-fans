@@ -203,7 +203,7 @@ var PhotoCell = Backbone.View.extend({
 
 var VideoItem = Backbone.View.extend({
     initialize: function(options) {
-        var tpl = _.template(require("./tpl/videoItem.html").trim());
+        var tpl = _.template(require("./tpl/VideoItem.html").trim());
         this.setElement($(tpl(options).trim()));
 
         this.$wrapper = this.$el.find('.cover');

@@ -10,6 +10,7 @@ var uglify = require('gulp-uglify');
 var base64 = require('gulp-base64');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream')
+var stringify = require('stringify');
 
 try {
     var notify = require('display-notification');
@@ -34,7 +35,11 @@ function onError(fn) {
 }
 
 gulp.task('browserify', function() {
-    var stream = browserify('./public/index.js').bundle();
+    var bundle = browserify('./public/index.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
     return stream.on('error', onError(function(err) {
             stream.end();
         }))
@@ -42,10 +47,10 @@ gulp.task('browserify', function() {
         .pipe(gulp.dest('./public/build'))
         .on('end', function() {
             notify({
-                'title': 'scripts',
+                'title': 'browserify',
                 'subtitle': 'finish compiling scripts'
             });
-        })
+        });
 });
 
 gulp.task('scripts', ['browserify'], function() {
@@ -54,9 +59,9 @@ gulp.task('scripts', ['browserify'], function() {
             './public/components/velocity/jquery.velocity.js',
             './public/build/index.js'
         ]).pipe(concat('index.js'))
-        .pipe(uglify({
-            preserveComments: 'some'
-        }))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
         .pipe(gulp.dest('public/build'));
 });
 

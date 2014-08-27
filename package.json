@@ -9,6 +9,7 @@
   "author": "Jarvys <yuhan534@126.com> (https://jarvys.github.io/)",
   "license": "ISC",
   "devDependencies": {
+    "brfs": "^1.2.0",
     "browserify": "^5.10.1",
     "browserify-shim": "^3.7.0",
     "gulp": "^3.8.7",
@@ -20,7 +21,8 @@
     "gulp-sass": "^0.7.3",
     "gulp-tinypng": "^1.0.2",
     "gulp-uglify": "^0.3.2",
-    "gulp-util": "^3.0.0"
+    "gulp-util": "^3.0.0",
+    "stringify": "^2.2.0"
   },
   "optionalDependencies": {
     "display-notification": "^1.0.1"
@@ -39,11 +41,6 @@
     "multpl": "0.0.3",
     "underscore": "^1.6.0",
     "vinyl-source-stream": "^0.1.1"
-  },
-  "browserify": {
-    "transform": [
-      "browserify-shim"
-    ]
   },
   "browserify-shim": {
     "jquery": "global:$",

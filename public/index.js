@@ -3,6 +3,7 @@ var _ = require("underscore");
 var multpl = require('multpl');
 var sizing = require('image-sizing');
 var download = require("multi-download");
+var fs = require('fs');
 
 var $ = require("jquery");
 var Backbone = require("backbone");
@@ -202,22 +203,7 @@ var PhotoCell = Backbone.View.extend({
 
 var VideoItem = Backbone.View.extend({
     initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <li class='video-item'>
-                <div class='title'><%= name %></div>
-                <div class='date'>2014-08-09</div>
-                <div class='cover-wrapper'>
-                    <div class='cover'>
-                        <img class='image' style='display: none' src='<%= image %>'>
-                        <a href='<%= url %>' class='btn-play'></a>
-                    </div>
-                </div>
-                <div class='description'><%= description %></div>
-            </li>
-            */
-            console.log
-        });
+        var tpl = _.template(require("./tpl/videoItem.html").trim());
         this.setElement($(tpl(options).trim()));
 
         this.$wrapper = this.$el.find('.cover');

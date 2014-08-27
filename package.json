@@ -19,8 +19,6 @@
     "gulp-tinypng": "^1.0.2",
     "gulp-util": "^3.0.0"
   },
-
-
   "optionalDependencies": {
     "display-notification": "^1.0.1"
   },
@@ -37,7 +35,8 @@
     "multiline": "^1.0.0",
     "multpl": "0.0.3",
     "underscore": "^1.6.0",
-    "vinyl-source-stream": "^0.1.1"
+    "vinyl-source-stream": "^0.1.1",
+    "transform": "~1.1.2"
   },
   "browserify": {
     "transform": [
@@ -46,12 +45,15 @@
   },
   "browser": {
     "jquery": "./public/components/jquery/dist/jquery.js",
-    "velocity": "./public/components/velocity/jquery.velocity.js"
+    "velocity": "./public/components/velocity/jquery.velocity.js",
+    "spin": "./public/components/spin.js/spin.js"
   },
   "browserify-shim": {
     "jquery": "$",
     "velocity": {
-      "depends": ["jquery:$"]
+      "depends": [
+        "jquery:$"
+      ]
     }
   }
 }

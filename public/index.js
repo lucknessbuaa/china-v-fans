@@ -8,6 +8,7 @@ Backbone.$ = $;
 
 var download = require("multi-download");
 require("velocity");
+require("spin");
 
 var CONTENT_ID = 1;
 
@@ -238,7 +239,7 @@ var VideoListView = BaseView.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
-            <div class='video-list-wrapper'>
+            <div class='video-list-wrapper' id="load">
                 <ul class='video-list list-unstyled'>
             </div>
             */
@@ -246,6 +247,8 @@ var VideoListView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
+        var target = document.getElementById('load');
+        new Spinner({color:'#fff', lines: 12}).spin(target);
 
         getVideoList(0, 10000).then(_.bind(function(data) {
             _.each(data.objects, _.bind(function(video) {
@@ -329,6 +332,7 @@ var NewsView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
+        //new Spinner({color:'#fff', lines: 12}).spin(target);
 
         getNewsList(0, 10000).then(_.bind(function(data) {
             _.each(data.objects, _.bind(function(article) {
@@ -355,6 +359,7 @@ var PhotoListView = BaseView.extend({
 
         this.setElement($(tpl(options))[0]);
         this.$list = this.$el.find('.photo-list');
+        //new Spinner({color:'#fff', lines: 12}).spin(target);
 
         this.photoList = [];
         getPhotoList(0, 20).then(_.bind(function(data) {
@@ -445,7 +450,7 @@ var FansRouter = Backbone.Router.extend({
         if (!tabView) {
             tabView = new TabView
             tabView.$el.appendTo(document.body);
-
+            
             photoListView = new PhotoListView();
             tabView.addTab('photo', photoListView);
 
@@ -501,16 +506,24 @@ var FansRouter = Backbone.Router.extend({
 
     video: function(id) {
         this.ensureTab('video');
-        if (photoListView) {
-            photoListView.hide();
+        if (!photoListView) {
+            videoListView = new VideoListView();
+            videoListView.$el.appendTo($(".content"));
+        } else {
+            videoListView.show();
         }
+        //if (photoListView) {
+        //    photoListView.hide();
+        //}
     },
 
     news: function() {
         this.ensureTab('news');
-        if (photoListView) {
-            photoListView.hide();
-        }
+        newsView = new newsView();
+        newsView.$el.appendTo($(".content"));
+        //if (photoListView) {
+        //    photoListView.hide();
+        //}
     }
 });
 

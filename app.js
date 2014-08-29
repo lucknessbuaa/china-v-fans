@@ -43,7 +43,16 @@ router.get('/news', function(req, res) {
 
 app.use("/", router);
 
-app.get(/^\/API\/output\/.*$/, function(req, res) {
+app.get(/^\/API\/.*$/, function(req, res) {
+    proxy.web(req, res, {
+        headers: {
+            host: 'contents.jarvys.me'
+        },
+        target: 'http://contents.jarvys.me',
+    });
+});
+
+app.post(/^\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
             host: 'contents.jarvys.me'

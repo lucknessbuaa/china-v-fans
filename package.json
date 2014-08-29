@@ -10,8 +10,6 @@
   "license": "ISC",
   "devDependencies": {
     "brfs": "^1.2.0",
-    "browserify": "^5.10.1",
-    "browserify-shim": "^3.7.0",
     "gulp": "^3.8.7",
     "gulp-base64": "^0.1.1",
     "gulp-changed": "^1.0.0",
@@ -22,7 +20,9 @@
     "gulp-tinypng": "^1.0.2",
     "gulp-uglify": "^0.3.2",
     "gulp-util": "^3.0.0",
-    "stringify": "^2.2.0"
+    "stringify": "^2.2.0",
+    "browserify-shim": "~3.7.0",
+    "browserify": "~5.10.1"
   },
   "optionalDependencies": {
     "display-notification": "^1.0.1"

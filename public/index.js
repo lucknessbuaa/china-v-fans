@@ -639,6 +639,7 @@ $(function() {
 
     new FansRouter();
     Backbone.history.start({
+        root: "/fans/",
         pushState: true
     });
 });

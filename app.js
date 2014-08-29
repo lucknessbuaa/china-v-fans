@@ -20,13 +20,13 @@ var morgan = require('morgan');
 var app = express();
 
 app.use(morgan('dev'));
-app.use("/", express.static(__dirname + "/public"));
+app.use("/fans/", express.static(__dirname + "/public"));
 app.engine('jade', require('jade').__express);
 
 var router = express.Router();
 
 router.get('/', function(req, res) {
-    return res.redirect('/photo');
+    return res.redirect('photo');
 });
 
 router.get('/photo/:id?', function(req, res) {
@@ -41,7 +41,7 @@ router.get('/news', function(req, res) {
     return res.render('index.jade');
 });
 
-app.use("/", router);
+app.use("/fans", router);
 
 app.get(/^\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {

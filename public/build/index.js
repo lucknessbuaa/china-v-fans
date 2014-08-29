@@ -9193,7 +9193,7 @@ return jQuery;
     Velocity.js
 ******************/
 
-/*! VelocityJS.org (0.11.8). (C) 2014 Julian Shapiro. MIT @license: en.wikipedia.org/wiki/MIT_License */
+/*! VelocityJS.org (0.11.9). (C) 2014 Julian Shapiro. MIT @license: en.wikipedia.org/wiki/MIT_License */
 
 ;(function (factory) {    
     /* CommonJS module. */
@@ -9212,8 +9212,12 @@ return jQuery;
     }
 }(function (jQuery) {
 return function (global, window, document, undefined) {
+
+    /***************
+        Summary
+    ***************/
+
     /*
-    Structure:
     - CSS: CSS stack that works independently from the rest of Velocity.
     - animate(): Core animation method that iterates over the targeted elements and queues the incoming call onto each element individually.
       - Pre-Queueing: Prepare the element for animation by instantiating its data cache and processing the call's options.
@@ -9265,8 +9269,6 @@ return function (global, window, document, undefined) {
             return setTimeout(function() { callback(timeCurrent + timeDelta); }, timeDelta);
         };
     })();
-
-    var ticker = window.requestAnimationFrame || rAFShim;
 
     /* Array compacting. Copyright Lo-Dash. MIT License: https://github.com/lodash/lodash/blob/master/LICENSE.txt */
     function compactSparseArray (array) {
@@ -9474,7 +9476,7 @@ return function (global, window, document, undefined) {
         hook: null, /* Defined below. */
         /* Set to true to force a duration of 1ms for all animations so that UI testing can be performed without waiting on animations to complete. */
         mock: false,
-        version: { major: 0, minor: 11, patch: 8 },
+        version: { major: 0, minor: 11, patch: 9 },
         /* Set to 1 or 2 (most verbose) to output debug info to console. */
         debug: false
     };
@@ -9630,7 +9632,6 @@ return function (global, window, document, undefined) {
     /* Given a tension, friction, and duration, a simulation at 60FPS will first run without a defined duration in order to calculate the full path. A second pass
        then adjusts the time delta -- using the relation between actual time and duration -- to calculate the path for the duration-constrained animation. */
     var generateSpringRK4 = (function () {
-
         function springAccelerationForState (state) {
             return (-state.tension * state.x) - (state.friction * state.v);
         }
@@ -9722,6 +9723,7 @@ return function (global, window, document, undefined) {
         /* Bonus "spring" easing, which is a less exaggerated version of easeInOutElastic. */
         spring: function(p) { return 1 - (Math.cos(p * 4.5 * Math.PI) * Math.exp(-p * 6)); }
     };
+
     $.each(
         [
             /* CSS3's named easing types. */
@@ -10957,14 +10959,6 @@ return function (global, window, document, undefined) {
                             $.each(createElementsArray(elements), function(l, element) {                                
                                 /* Check that this call was applied to the target element. */
                                 if (element === activeElement) {
-                                    if (Data(element)) {
-                                        /* Since "reverse" uses cached start values (the previous call's endValues),
-                                           these values must be changed to reflect the final value that the elements were actually tweened to. */
-                                        $.each(Data(element).tweensContainer, function(m, activeTween) {
-                                            activeTween.endValue = activeTween.currentValue;
-                                        });
-                                    }
-
                                     /* Optionally clear the remaining queued calls. */
                                     if (options !== undefined) {
                                         /* Iterate through the items in the element's queue. */
@@ -10979,6 +10973,14 @@ return function (global, window, document, undefined) {
 
                                         /* Clearing the $.queue() array is achieved by resetting it to []. */
                                         $.queue(element, queueName, []);
+                                    }
+
+                                    if (Data(element) && queueName === "") {
+                                        /* Since "reverse" uses cached start values (the previous call's endValues),
+                                           these values must be changed to reflect the final value that the elements were actually tweened to. */
+                                        $.each(Data(element).tweensContainer, function(m, activeTween) {
+                                            activeTween.endValue = activeTween.currentValue;
+                                        });
                                     }
 
                                     callsToStop.push(i);
@@ -11013,38 +11015,39 @@ return function (global, window, document, undefined) {
 
                 /* Check if a string matches a registered sequence (see Sequences above). */
                 } else if (Type.isString(propertiesMap) && Velocity.Sequences[propertiesMap]) {
-                    var durationOriginal = options.duration,
-                        delayOriginal = options.delay || 0;
+                    var opts = $.extend({}, options),
+                        durationOriginal = opts.duration,
+                        delayOriginal = opts.delay || 0;
 
                     /* If the backwards option was passed in, reverse the element set so that elements animate from the last to the first. */
-                    if (options.backwards === true) {
+                    if (opts.backwards === true) {
                         elements = (Type.isWrapped(elements) ? [].slice.call(elements) : elements).reverse();
                     }
 
                     /* Individually trigger the sequence for each element in the set to prevent users from having to handle iteration logic in their sequence. */
                     $.each(createElementsArray(elements), function(elementIndex, element) {
                         /* If the stagger option was passed in, successively delay each element by the stagger value (in ms). Retain the original delay value. */
-                        if (parseFloat(options.stagger)) {
-                            options.delay = delayOriginal + (parseFloat(options.stagger) * elementIndex);
-                        } else if (Type.isFunction(options.stagger)) {
-                            options.delay = delayOriginal + options.stagger.call(element, elementIndex, elementsLength);
+                        if (parseFloat(opts.stagger)) {
+                            opts.delay = delayOriginal + (parseFloat(opts.stagger) * elementIndex);
+                        } else if (Type.isFunction(opts.stagger)) {
+                            opts.delay = delayOriginal + opts.stagger.call(element, elementIndex, elementsLength);
                         }
 
-                        /* If the drag option was passed in, successively increase/decrease (depending on the presense of options.backwards)
+                        /* If the drag option was passed in, successively increase/decrease (depending on the presense of opts.backwards)
                            the duration of each element's animation, using floors to prevent producing very short durations. */
-                        if (options.drag) {
+                        if (opts.drag) {
                             /* Default the duration of UI pack effects (callouts and transitions) to 1000ms instead of the usual default duration of 400ms. */
-                            options.duration = parseFloat(durationOriginal) || (/^(callout|transition)/.test(propertiesMap) ? 1000 : DURATION_DEFAULT);
+                            opts.duration = parseFloat(durationOriginal) || (/^(callout|transition)/.test(propertiesMap) ? 1000 : DURATION_DEFAULT);
 
                             /* For each element, take the greater duration of: A) animation completion percentage relative to the original duration,
                                B) 75% of the original duration, or C) a 200ms fallback (in case duration is already set to a low value).
                                The end result is a baseline of 75% of the sequence's duration that increases/decreases as the end of the element set is approached. */
-                            options.duration = Math.max(options.duration * (options.backwards ? 1 - elementIndex/elementsLength : (elementIndex + 1) / elementsLength), options.duration * 0.75, 200);
+                            opts.duration = Math.max(opts.duration * (opts.backwards ? 1 - elementIndex/elementsLength : (elementIndex + 1) / elementsLength), opts.duration * 0.75, 200);
                         }
 
-                        /* Pass in the call's options object so that the sequence can optionally extend it. It defaults to an empty object instead of null to
-                           reduce the options checking logic required inside the sequence. */
-                        Velocity.Sequences[propertiesMap].call(element, element, options || {}, elementIndex, elementsLength, elements, promiseData.promise ? promiseData : undefined);
+                        /* Pass in the call's opts object so that the sequence can optionally extend it. It defaults to an empty object instead of null to
+                           reduce the opts checking logic required inside the sequence. */
+                        Velocity.Sequences[propertiesMap].call(element, element, opts || {}, elementIndex, elementsLength, elements, promiseData.promise ? promiseData : undefined);
                     });
 
                     /* Since the animation logic resides within the sequence's own code, abort the remainder of this call.
@@ -11714,30 +11717,32 @@ return function (global, window, document, undefined) {
 
                             if (!sameEmRatio || !samePercentRatio) {
                                 var dummy = Data(element).isSVG ? document.createElementNS("http://www.w3.org/2000/svg", "rect") : document.createElement("div");
+                                
                                 Velocity.init(dummy);
                                 sameRatioIndicators.myParent.appendChild(dummy);
 
-                                Velocity.CSS.setPropertyValue(dummy, "position", sameRatioIndicators.position);
-                                Velocity.CSS.setPropertyValue(dummy, "fontSize", sameRatioIndicators.fontSize);
                                 /* To accurately and consistently calculate conversion ratios, the element's cascaded overflow and box-sizing are stripped.
                                    Similarly, since width/height can be artificially constrained by their min-/max- equivalents, these are controlled for as well. */
                                 /* Note: Overflow must be also be controlled for per-axis since the overflow property overwrites its per-axis values. */
-                                Velocity.CSS.setPropertyValue(dummy, "overflow", "hidden");
-                                Velocity.CSS.setPropertyValue(dummy, "overflowX", "hidden");
-                                Velocity.CSS.setPropertyValue(dummy, "overflowY", "hidden");
+                                $.each([ "overflow", "overflowX", "overflowY" ], function(i, property) {
+                                    Velocity.CSS.setPropertyValue(dummy, property, "hidden");
+                                });
+                                Velocity.CSS.setPropertyValue(dummy, "position", sameRatioIndicators.position);
+                                Velocity.CSS.setPropertyValue(dummy, "fontSize", sameRatioIndicators.fontSize);
                                 Velocity.CSS.setPropertyValue(dummy, "boxSizing", "content-box");
-                                /* paddingLeft arbitrarily acts as our proxy property for the em ratio. */
-                                Velocity.CSS.setPropertyValue(dummy, "paddingLeft", measurement + "em");
+                                
                                 /* width and height act as our proxy properties for measuring the horizontal and vertical % ratios. */
                                 $.each([ "minWidth", "maxWidth", "width", "minHeight", "maxHeight", "height" ], function(i, property) {
                                     Velocity.CSS.setPropertyValue(dummy, property, measurement + "%");
                                 });
+                                /* paddingLeft arbitrarily acts as our proxy property for the em ratio. */
+                                Velocity.CSS.setPropertyValue(dummy, "paddingLeft", measurement + "em");
 
                                 /* Divide the returned value by the measurement to get the ratio between 1% and 1px. Default to 1 since working with 0 can produce Infinite. */
                                 unitRatios.percentToPxWidth = callUnitConversionData.lastPercentToPxWidth = (parseFloat(CSS.getPropertyValue(dummy, "width", null, true)) || 1) / measurement; /* GET */
                                 unitRatios.percentToPxHeight = callUnitConversionData.lastPercentToPxHeight = (parseFloat(CSS.getPropertyValue(dummy, "height", null, true)) || 1) / measurement; /* GET */
                                 unitRatios.emToPx = callUnitConversionData.lastEmToPx = (parseFloat(CSS.getPropertyValue(dummy, "paddingLeft")) || 1) / measurement; /* GET */
-
+                                
                                 sameRatioIndicators.myParent.removeChild(dummy);
                             } else {
                                 unitRatios.emToPx = callUnitConversionData.lastEmToPx;
@@ -11796,10 +11801,10 @@ return function (global, window, document, undefined) {
                                 /* By this point, we cannot avoid unit conversion (it's undesirable since it causes layout thrashing).
                                    If we haven't already, we trigger calculateUnitRatios(), which runs once per element per call. */
                                 elementUnitConversionData = elementUnitConversionData || calculateUnitRatios();
-
+                                
                                 /* The following RegEx matches CSS properties that have their % values measured relative to the x-axis. */
                                 /* Note: W3C spec mandates that all of margin and padding's properties (even top and bottom) are %-relative to the *width* of the parent element. */
-                                var axis = (/margin|padding|left|right|width|text|word|letter/i.test(property) || /X$/.test(property)) ? "x" : "y";
+                                var axis = (/margin|padding|left|right|width|text|word|letter/i.test(property) || /X$/.test(property) || property === "x") ? "x" : "y";
 
                                 /* In order to avoid generating n^2 bespoke conversion functions, unit conversion is a two-step process:
                                    1) Convert startValue into pixels. 2) Convert this new pixel value into endValue's unit type. */
@@ -11895,11 +11900,12 @@ return function (global, window, document, undefined) {
                     /* The call array houses the tweensContainers for each element being animated in the current call. */
                     call.push(tweensContainer);
 
-                    /* Store the tweensContainer on the element, plus the current call's opts so that Velocity can reference this data the next time this element is animated. */
-                    if (opts.queue !== false) {
+                    /* Store the tweensContainer and options if we're working on the default effects queue, so that they can be used by the reverse command. */
+                    if (opts.queue === "") {
                         Data(element).tweensContainer = tweensContainer;
+                        Data(element).opts = opts;
                     }
-                    Data(element).opts = opts;
+
                     /* Switch on the element's animating flag. */
                     Data(element).isAnimating = true;
 
@@ -12047,6 +12053,8 @@ return function (global, window, document, undefined) {
     /**************
         Timing
     **************/
+
+    var ticker = window.requestAnimationFrame || rAFShim;
 
     /* Inactive browser tabs pause rAF, which results in all active animations immediately sprinting to their completion states when the tab refocuses.
        To get around this, we dynamically switch rAF to setTimeout (which the browser *doesn't* pause) when the tab loses focus. We skip this for mobile
@@ -12270,7 +12278,6 @@ return function (global, window, document, undefined) {
                 if (opts.display !== undefined && opts.display !== "none") {
                     Velocity.State.calls[i][2].display = false;
                 }
-
                 if (opts.visibility && opts.visibility !== "hidden") {
                     Velocity.State.calls[i][2].visibility = false;
                 }
@@ -12499,6 +12506,10 @@ return function (global, window, document, undefined) {
                 /* If the user passed in a begin callback, fire it now. */
                 begin && begin.call(element, element);
 
+                /* Force vertical overflow content to clip so that sliding works as expected. */
+                inlineValues.overflowY = element.style.overflowY;
+                element.style.overflowY = "hidden";
+
                 /* Cache the elements' original vertical dimensional property values so that we can animate back to them. */
                 for (var property in computedValues) {
                     /* Cache all inline values, we reset to upon animation completion. */
@@ -12530,17 +12541,14 @@ return function (global, window, document, undefined) {
     $.each([ "In", "Out" ], function(i, direction) {
         Velocity.Sequences["fade" + direction] = function (element, options, elementsIndex, elementsSize, elements, promiseData) {
             var opts = $.extend({}, options),
-                propertiesMap = {
-                    opacity: (direction === "In") ? 1 : 0
-                };
+                propertiesMap = { opacity: (direction === "In") ? 1 : 0 },
+                originalComplete = opts.complete;
 
             /* Since sequences are triggered individually for each element in the animated set, avoid repeatedly triggering
                callbacks by firing them only when the final element has been reached. */
             if (elementsIndex !== elementsSize - 1) {
                 opts.complete = opts.begin = null;
             } else {
-                var originalComplete = opts.complete;
-
                 opts.complete = function() {
                     if (originalComplete) {
                         originalComplete.call(element, element);
@@ -12586,6 +12594,7 @@ var $ = (typeof window !== "undefined" ? window.$ : typeof global !== "undefined
 var Backbone = require("backbone");
 Backbone.$ = $;
 (typeof window !== "undefined" ? window.Velocity : typeof global !== "undefined" ? global.Velocity : null);
+var Spinner =  require("./components/spin.js/spin");
 
 var CONTENT_ID = 1;
 
@@ -12613,6 +12622,12 @@ function getPhoto(id) {
     return $.get("/API/output/image/" + id + "/?format=json&content=");
 }
 
+function postPhoto(id) {
+    var request = $.get("/API/likes", {
+        option_id: id
+    }, 'json');
+}
+
 var ViewProto = {
     hide: function() {
         this.$el.hide()
@@ -12630,31 +12645,48 @@ var ImageView = Backbone.View.extend({
         var tpl = _.template(multiline(function() {
             /*@preserve
             <div class='photo-view'>
+                <div class="share-hide bg">
+                    <img src="../img/arrow.png">
+                </div>
                 <div class='photo-wrapper'>
                 </div>
                 <div class='toolbar'>
                     <div class='share'><span class='glyphicon glyphicon-share'></span></div>
                     <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
-                    <div class='download'><span class='glyphicon glyphicon-download-alt'></span></div>
+                    <div class='download'><a href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
                 <div>
             </div>
             */
             console.log
         }).trim());
 
+        this.imgOptions = {};
+
         this.setElement($(tpl(options))[0]);
         this.$wrapper = this.$el.find('.photo-wrapper')
 
+        this.spinner = new Spinner({color:'#fff', lines: 12});
+        this.spinner.spin(this.$wrapper[0]);
         this.$share = this.$el.find('.share');
         this.$heart = this.$el.find('.heart');
-        this.$download = this.$el.find('.download');
+        this.$download = this.$el.find('.download a');
+        this.$shareHide = this.$el.find('.share-hide');        
+        this.$shareImg = this.$el.find('.share-hide img');
 
         this.$download.click(_.bind(function() {
-            download([this.imageUrl]);
+            
+        }, this));
+
+        this.$shareHide.click(_.bind(function(){
+            this.$shareImg.velocity("fadeOut")
+            this.$shareHide.addClass('share-hide');
+            this.$el.find('.toolbar').removeClass('share-hide');
         }, this));
 
         this.$share.click(_.bind(function() {
-            // TODO show share tip
+            this.$shareHide.removeClass('share-hide');
+            this.$el.find('.toolbar').addClass('share-hide');
+            this.$shareImg.velocity("fadeIn")
         }, this));
 
         this.$heart.click(_.bind(function() {
@@ -12662,6 +12694,7 @@ var ImageView = Backbone.View.extend({
                 this.$heart.addClass('up');
                 mark(this.imageId);
                 this.markImage(this.imageId);
+                postPhoto(this.imageId);
             } else {
                 unmark(this.imageId);
                 this.unmarkImage(this.imageId);
@@ -12711,7 +12744,15 @@ var ImageView = Backbone.View.extend({
         getPhoto(id).then(_.bind(function(data) {
             this.imageUrl = data.image;
             this.$wrapper.html("");
-            this.$image = $("<img src='" + data.image + "'>").appendTo(this.$wrapper);
+            this.image = new Image();
+            this.image.src = data.image;
+
+            this.imgOptions.imgUrl = data.image;
+            this.imgOptions.title = data.name;
+
+            this.$download.attr('href', data.image);
+            
+            this.$image = $(this.image);
 
             this.$image.load(_.bind(function() {
                 this.onImageLoad();
@@ -12719,12 +12760,14 @@ var ImageView = Backbone.View.extend({
         }, this));
     },
 
-    onImageLoad: function() {
-        var imgWidth = this.$image.width();
-        var imgHeight = this.$image.height();
 
-        var wrapperWidth = this.$wrapper.width();
-        var wrapperHeight = this.$wrapper.height();
+
+    onImageLoad: function() {
+        var imgWidth = this.$image[0].naturalWidth;
+        var imgHeight = this.$image[0].naturalHeight;
+
+        var wrapperWidth = window.innerWidth;
+        var wrapperHeight = window.innerHeight;
 
         console.log(imgWidth, imgHeight, wrapperWidth, wrapperHeight);
         this.$wrapper.scrollTop(-(wrapperHeight - imgHeight) / 2);
@@ -12736,6 +12779,8 @@ var ImageView = Backbone.View.extend({
             this.$image.width(wrapperWidth);
             this.$wrapper.scrollTop(0);
         }
+        this.$image.appendTo(this.$wrapper);
+        this.spinner.stop();
     },
 
     fadeIn: function() {
@@ -12778,22 +12823,48 @@ var PhotoCell = Backbone.View.extend({
     }
 });
 
+
+
+
 var VideoItem = Backbone.View.extend({
     initialize: function(options) {
-        var tpl = _.template(require("./tpl/videoItem.html").trim());
+        var tpl = _.template(require("./tpl/VideoItem.html").trim());
         this.setElement($(tpl(options).trim()));
 
         this.$wrapper = this.$el.find('.cover');
         this.$image = this.$el.find('img.image');
+        this.spinner = new Spinner({color:'#fff', lines: 12});
+        this.spinner.spin(this.$wrapper[0]);
+        this.resize = false;
+        this.width = window.innerWidth - 40;
+        this.height = 150;
         this.$image.load(_.bind(function() {
-            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
-                this.$image.width(), this.$image.height());
-
-            this.$image.css('width', size.width + 'px');
-            this.$image.css('margin-left', (-size.width / 2) + 'px')
-            this.$image.css('left', '50%');
-            this.$image.show();
+            this.ensureSize();
+            this.spinner.stop();
         }, this));
+    },
+
+    ensureSize: function(){
+        if(this.$image[0].naturalWidth == 0 || this.resize){
+            return;
+        }
+        this.resize = true;
+        console.log('resizing image', this.width, this.height, this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+    },
+
+    loadAgain: function(){
+        if(this.$image[0].naturalWidth == 0){
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        }else{
+            this.ensureSize();
+        }
     }
 });
 
@@ -12801,7 +12872,7 @@ var VideoListView = BaseView.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
-            <div class='video-list-wrapper'>
+            <div class='video-list-wrapper' id="load">
                 <ul class='video-list list-unstyled'>
             </div>
             */
@@ -12809,15 +12880,39 @@ var VideoListView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
+    },
 
-        getVideoList(0, 10000).then(_.bind(function(data) {
-            _.each(data.objects, _.bind(function(video) {
-                var item = new VideoItem(video);
-                item.$el.appendTo(this.$list);
-            }, this));
-        }, this), function() {
-            // TODO
-        });
+    show: function() {
+        if(!this.$itemlist){
+            this.$itemlist = [];
+            
+            this.spinner = new Spinner({color:'#fff', lines: 12});
+            this.spinner.spin(document.body);
+            var i = 0;
+            getVideoList(0, 10000).then(_.bind(function(data) {
+                _.each(data.objects, _.bind(function(video) {
+                    var item = new VideoItem(video);
+                
+                    this.$itemlist[i] = item;
+                    item.$el.appendTo(this.$list);
+                    i++;
+                }, this));
+                this.spinner.stop();
+            }, this), function() {
+                // TODO
+            });
+        }else if(this.$itemlist.length == 0){
+
+        }else{
+            this.getLoad();
+        }
+        this.$el.show();
+    },
+
+    getLoad: function(){
+        for(var i = 0; i < this.$itemlist.length; i++){
+            this.$itemlist[i].loadAgain();
+        }
     }
 });
 
@@ -12831,7 +12926,6 @@ var NewsItem = Backbone.View.extend({
                 <div class='cover-wrapper'>
                     <div class='cover'>
                         <img class='image' style='display: none' src='<%= image %>'>
-                        <a href='#' class='btn-play'></a>
                     </div>
                 </div>
                 <div class='con hi'>
@@ -12856,27 +12950,48 @@ var NewsItem = Backbone.View.extend({
             if ($temp.hasClass('hi')) {
                 $temp.removeClass('hi');
                 $temp.velocity({
-                    'max-height': ($('.content-wrapper').outerHeight() + 8) + 'px'
+                    'max-height': ($($temp.children()[0]).outerHeight() + 8) + 'px'
                 });
                 $(this).children()[0].innerHTML = '收起';
             } else {
                 $temp.addClass('hi');
                 $temp.velocity({
-                    'max-height': '65px'
+                    'max-height': '46px'
                 });
                 $(this).children()[0].innerHTML = '展开';
             }
         });
+        this.width = window.innerWidth;
+        this.height = 160;
+        this.resize = false;
+        this.spinner = new Spinner({color:'#fff', lines: 12});
+        this.spinner.spin(this.$wrapper[0]);
         this.$image.load(_.bind(function() {
-            console.log('resizing image', this.$wrapper.width(), this.$wrapper.height(), this.$image.width(), this.$image.height());
-            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
-                this.$image.width(), this.$image.height());
-
-            this.$image.css('width', size.width + 'px');
-            this.$image.css('margin-left', (-size.width / 2) + 'px')
-            this.$image.css('left', '50%');
-            this.$image.show();
+            this.ensureSize();
+            this.spinner.stop();
         }, this));
+    },
+
+    ensureSize: function() {
+        if(this.$image[0].naturalWidth == 0 || this.resize){
+            return;
+        }
+        this.resize = true;
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+
+    },
+
+    loadAgain: function(){
+        if(this.$image[0].naturalWidth == 0){
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        }else{
+            this.ensureSize();
+        }
     }
 });
 
@@ -12892,15 +13007,39 @@ var NewsView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
+        
+    },
 
-        getNewsList(0, 10000).then(_.bind(function(data) {
-            _.each(data.objects, _.bind(function(article) {
-                var item = new NewsItem(article);
-                item.$el.appendTo(this.$list);
-            }, this));
-        }, this), function() {
+    show: function() {
+        var i = 0;
+        if(!this.$itemlist){
+            this.$itemlist = [];
+            this.spinner = new Spinner({color:'#fff', lines: 12});
+            this.spinner.spin(document.body);
+            getNewsList(0, 10000).then(_.bind(function(data) {
+                _.each(data.objects, _.bind(function(article) {
+                    var item = new NewsItem(article);
+
+                    this.$itemlist[i] = item;
+                    i++;
+                    item.$el.appendTo(this.$list);
+                }, this));
+                this.spinner.stop();
+            }, this), function() {
             // TODO
-        });
+            });
+        }else if(this.$itemlist.length == 0){
+
+        }else{
+            this.getLoad();
+        }
+        this.$el.show();
+    },
+
+    getLoad: function(){
+        for(var i = 0; i < this.$itemlist.length; i++){
+            this.$itemlist[i].loadAgain();
+        }
     }
 });
 
@@ -12918,11 +13057,16 @@ var PhotoListView = BaseView.extend({
 
         this.setElement($(tpl(options))[0]);
         this.$list = this.$el.find('.photo-list');
-
+        
         this.photoList = [];
+        if(this.photoList.length == 0){
+            this.spinner = new Spinner({color:'#fff', lines: 12});
+            this.spinner.spin(document.body);
+        }
         getPhotoList(0, 20).then(_.bind(function(data) {
             this.photoList = data.objects;
             this.render();
+            this.spinner.stop();
         }, this));
     },
 
@@ -12963,6 +13107,10 @@ var TabView = Backbone.View.extend({
             var $this = $(this);
             var tab = $this.attr('href');
             self.activate(tab);
+        });
+
+        this.$el.on('tap', function(){
+            this.hide();
         });
 
         this.views = {};
@@ -13006,9 +13154,9 @@ var FansRouter = Backbone.Router.extend({
 
     ensureTab: function(tab) {
         if (!tabView) {
-            tabView = new TabView
+            tabView = new TabView()
             tabView.$el.appendTo(document.body);
-
+            
             photoListView = new PhotoListView();
             tabView.addTab('photo', photoListView);
 
@@ -13047,7 +13195,7 @@ var FansRouter = Backbone.Router.extend({
         console.log('set image id');
         this.imageView.setImage(id);
         console.log('fadeIn');
-        this.imageView.fadeIn();
+        //this.imageView.fadeIn();
 
         this.imageView.on('exit', _.bind(function() {
             this.imageView.fadeOut(_.bind(function() {
@@ -13064,16 +13212,10 @@ var FansRouter = Backbone.Router.extend({
 
     video: function(id) {
         this.ensureTab('video');
-        if (photoListView) {
-            photoListView.hide();
-        }
     },
 
     news: function() {
         this.ensureTab('news');
-        if (photoListView) {
-            photoListView.hide();
-        }
     }
 });
 
@@ -13085,8 +13227,9 @@ $(function() {
         pushState: true
     });
 });
+
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./tpl/videoItem.html":10,"backbone":2,"fs":3,"image-sizing":4,"multi-download":5,"multiline":6,"multpl":8,"underscore":9}],2:[function(require,module,exports){
+},{"./components/spin.js/spin":10,"./tpl/VideoItem.html":11,"backbone":2,"fs":3,"image-sizing":4,"multi-download":5,"multiline":6,"multpl":8,"underscore":9}],2:[function(require,module,exports){
 //     Backbone.js 1.1.2
 
 //     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -16195,6 +16338,357 @@ module.exports = function(fn) {
 }).call(this);
 
 },{}],10:[function(require,module,exports){
+/**
+ * Copyright (c) 2011-2014 Felix Gnass
+ * Licensed under the MIT license
+ */
+(function(root, factory) {
+
+  /* CommonJS */
+  if (typeof exports == 'object')  module.exports = factory()
+
+  /* AMD module */
+  else if (typeof define == 'function' && define.amd) define(factory)
+
+  /* Browser global */
+  else root.Spinner = factory()
+}
+(this, function() {
+  "use strict";
+
+  var prefixes = ['webkit', 'Moz', 'ms', 'O'] /* Vendor prefixes */
+    , animations = {} /* Animation rules keyed by their name */
+    , useCssAnimations /* Whether to use CSS animations or setTimeout */
+
+  /**
+   * Utility function to create elements. If no tag name is given,
+   * a DIV is created. Optionally properties can be passed.
+   */
+  function createEl(tag, prop) {
+    var el = document.createElement(tag || 'div')
+      , n
+
+    for(n in prop) el[n] = prop[n]
+    return el
+  }
+
+  /**
+   * Appends children and returns the parent.
+   */
+  function ins(parent /* child1, child2, ...*/) {
+    for (var i=1, n=arguments.length; i<n; i++)
+      parent.appendChild(arguments[i])
+
+    return parent
+  }
+
+  /**
+   * Insert a new stylesheet to hold the @keyframe or VML rules.
+   */
+  var sheet = (function() {
+    var el = createEl('style', {type : 'text/css'})
+    ins(document.getElementsByTagName('head')[0], el)
+    return el.sheet || el.styleSheet
+  }())
+
+  /**
+   * Creates an opacity keyframe animation rule and returns its name.
+   * Since most mobile Webkits have timing issues with animation-delay,
+   * we create separate rules for each line/segment.
+   */
+  function addAnimation(alpha, trail, i, lines) {
+    var name = ['opacity', trail, ~~(alpha*100), i, lines].join('-')
+      , start = 0.01 + i/lines * 100
+      , z = Math.max(1 - (1-alpha) / trail * (100-start), alpha)
+      , prefix = useCssAnimations.substring(0, useCssAnimations.indexOf('Animation')).toLowerCase()
+      , pre = prefix && '-' + prefix + '-' || ''
+
+    if (!animations[name]) {
+      sheet.insertRule(
+        '@' + pre + 'keyframes ' + name + '{' +
+        '0%{opacity:' + z + '}' +
+        start + '%{opacity:' + alpha + '}' +
+        (start+0.01) + '%{opacity:1}' +
+        (start+trail) % 100 + '%{opacity:' + alpha + '}' +
+        '100%{opacity:' + z + '}' +
+        '}', sheet.cssRules.length)
+
+      animations[name] = 1
+    }
+
+    return name
+  }
+
+  /**
+   * Tries various vendor prefixes and returns the first supported property.
+   */
+  function vendor(el, prop) {
+    var s = el.style
+      , pp
+      , i
+
+    prop = prop.charAt(0).toUpperCase() + prop.slice(1)
+    for(i=0; i<prefixes.length; i++) {
+      pp = prefixes[i]+prop
+      if(s[pp] !== undefined) return pp
+    }
+    if(s[prop] !== undefined) return prop
+  }
+
+  /**
+   * Sets multiple style properties at once.
+   */
+  function css(el, prop) {
+    for (var n in prop)
+      el.style[vendor(el, n)||n] = prop[n]
+
+    return el
+  }
+
+  /**
+   * Fills in default values.
+   */
+  function merge(obj) {
+    for (var i=1; i < arguments.length; i++) {
+      var def = arguments[i]
+      for (var n in def)
+        if (obj[n] === undefined) obj[n] = def[n]
+    }
+    return obj
+  }
+
+  /**
+   * Returns the absolute page-offset of the given element.
+   */
+  function pos(el) {
+    var o = { x:el.offsetLeft, y:el.offsetTop }
+    while((el = el.offsetParent))
+      o.x+=el.offsetLeft, o.y+=el.offsetTop
+
+    return o
+  }
+
+  /**
+   * Returns the line color from the given string or array.
+   */
+  function getColor(color, idx) {
+    return typeof color == 'string' ? color : color[idx % color.length]
+  }
+
+  // Built-in defaults
+
+  var defaults = {
+    lines: 12,            // The number of lines to draw
+    length: 7,            // The length of each line
+    width: 5,             // The line thickness
+    radius: 10,           // The radius of the inner circle
+    rotate: 0,            // Rotation offset
+    corners: 1,           // Roundness (0..1)
+    color: '#000',        // #rgb or #rrggbb
+    direction: 1,         // 1: clockwise, -1: counterclockwise
+    speed: 1,             // Rounds per second
+    trail: 100,           // Afterglow percentage
+    opacity: 1/4,         // Opacity of the lines
+    fps: 20,              // Frames per second when using setTimeout()
+    zIndex: 2e9,          // Use a high z-index by default
+    className: 'spinner', // CSS class to assign to the element
+    top: '50%',           // center vertically
+    left: '50%',          // center horizontally
+    position: 'absolute'  // element position
+  }
+
+  /** The constructor */
+  function Spinner(o) {
+    this.opts = merge(o || {}, Spinner.defaults, defaults)
+  }
+
+  // Global defaults that override the built-ins:
+  Spinner.defaults = {}
+
+  merge(Spinner.prototype, {
+
+    /**
+     * Adds the spinner to the given target element. If this instance is already
+     * spinning, it is automatically removed from its previous target b calling
+     * stop() internally.
+     */
+    spin: function(target) {
+      this.stop()
+
+      var self = this
+        , o = self.opts
+        , el = self.el = css(createEl(0, {className: o.className}), {position: o.position, width: 0, zIndex: o.zIndex})
+        , mid = o.radius+o.length+o.width
+
+      css(el, {
+        left: o.left,
+        top: o.top
+      })
+        
+      if (target) {
+        target.insertBefore(el, target.firstChild||null)
+      }
+
+      el.setAttribute('role', 'progressbar')
+      self.lines(el, self.opts)
+
+      if (!useCssAnimations) {
+        // No CSS animation support, use setTimeout() instead
+        var i = 0
+          , start = (o.lines - 1) * (1 - o.direction) / 2
+          , alpha
+          , fps = o.fps
+          , f = fps/o.speed
+          , ostep = (1-o.opacity) / (f*o.trail / 100)
+          , astep = f/o.lines
+
+        ;(function anim() {
+          i++;
+          for (var j = 0; j < o.lines; j++) {
+            alpha = Math.max(1 - (i + (o.lines - j) * astep) % f * ostep, o.opacity)
+
+            self.opacity(el, j * o.direction + start, alpha, o)
+          }
+          self.timeout = self.el && setTimeout(anim, ~~(1000/fps))
+        })()
+      }
+      return self
+    },
+
+    /**
+     * Stops and removes the Spinner.
+     */
+    stop: function() {
+      var el = this.el
+      if (el) {
+        clearTimeout(this.timeout)
+        if (el.parentNode) el.parentNode.removeChild(el)
+        this.el = undefined
+      }
+      return this
+    },
+
+    /**
+     * Internal method that draws the individual lines. Will be overwritten
+     * in VML fallback mode below.
+     */
+    lines: function(el, o) {
+      var i = 0
+        , start = (o.lines - 1) * (1 - o.direction) / 2
+        , seg
+
+      function fill(color, shadow) {
+        return css(createEl(), {
+          position: 'absolute',
+          width: (o.length+o.width) + 'px',
+          height: o.width + 'px',
+          background: color,
+          boxShadow: shadow,
+          transformOrigin: 'left',
+          transform: 'rotate(' + ~~(360/o.lines*i+o.rotate) + 'deg) translate(' + o.radius+'px' +',0)',
+          borderRadius: (o.corners * o.width>>1) + 'px'
+        })
+      }
+
+      for (; i < o.lines; i++) {
+        seg = css(createEl(), {
+          position: 'absolute',
+          top: 1+~(o.width/2) + 'px',
+          transform: o.hwaccel ? 'translate3d(0,0,0)' : '',
+          opacity: o.opacity,
+          animation: useCssAnimations && addAnimation(o.opacity, o.trail, start + i * o.direction, o.lines) + ' ' + 1/o.speed + 's linear infinite'
+        })
+
+        if (o.shadow) ins(seg, css(fill('#000', '0 0 4px ' + '#000'), {top: 2+'px'}))
+        ins(el, ins(seg, fill(getColor(o.color, i), '0 0 1px rgba(0,0,0,.1)')))
+      }
+      return el
+    },
+
+    /**
+     * Internal method that adjusts the opacity of a single line.
+     * Will be overwritten in VML fallback mode below.
+     */
+    opacity: function(el, i, val) {
+      if (i < el.childNodes.length) el.childNodes[i].style.opacity = val
+    }
+
+  })
+
+
+  function initVML() {
+
+    /* Utility function to create a VML tag */
+    function vml(tag, attr) {
+      return createEl('<' + tag + ' xmlns="urn:schemas-microsoft.com:vml" class="spin-vml">', attr)
+    }
+
+    // No CSS transforms but VML support, add a CSS rule for VML elements:
+    sheet.addRule('.spin-vml', 'behavior:url(#default#VML)')
+
+    Spinner.prototype.lines = function(el, o) {
+      var r = o.length+o.width
+        , s = 2*r
+
+      function grp() {
+        return css(
+          vml('group', {
+            coordsize: s + ' ' + s,
+            coordorigin: -r + ' ' + -r
+          }),
+          { width: s, height: s }
+        )
+      }
+
+      var margin = -(o.width+o.length)*2 + 'px'
+        , g = css(grp(), {position: 'absolute', top: margin, left: margin})
+        , i
+
+      function seg(i, dx, filter) {
+        ins(g,
+          ins(css(grp(), {rotation: 360 / o.lines * i + 'deg', left: ~~dx}),
+            ins(css(vml('roundrect', {arcsize: o.corners}), {
+                width: r,
+                height: o.width,
+                left: o.radius,
+                top: -o.width>>1,
+                filter: filter
+              }),
+              vml('fill', {color: getColor(o.color, i), opacity: o.opacity}),
+              vml('stroke', {opacity: 0}) // transparent stroke to fix color bleeding upon opacity change
+            )
+          )
+        )
+      }
+
+      if (o.shadow)
+        for (i = 1; i <= o.lines; i++)
+          seg(i, -2, 'progid:DXImageTransform.Microsoft.Blur(pixelradius=2,makeshadow=1,shadowopacity=.3)')
+
+      for (i = 1; i <= o.lines; i++) seg(i)
+      return ins(el, g)
+    }
+
+    Spinner.prototype.opacity = function(el, i, val, o) {
+      var c = el.firstChild
+      o = o.shadow && o.lines || 0
+      if (c && i+o < c.childNodes.length) {
+        c = c.childNodes[i+o]; c = c && c.firstChild; c = c && c.firstChild
+        if (c) c.opacity = val
+      }
+    }
+  }
+
+  var probe = css(createEl('group'), {behavior: 'url(#default#VML)'})
+
+  if (!vendor(probe, 'transform') && probe.adj) initVML()
+  else useCssAnimations = vendor(probe, 'animation')
+
+  return Spinner
+
+}));
+
+},{}],11:[function(require,module,exports){
 module.exports = "<li class='video-item'>\n    <div class='title'><%= name %></div>\n    <div class='date'>2014-08-09</div>\n    <div class='cover-wrapper'>\n        <div class='cover'>\n            <img class='image' style='display: none' src='<%= image %>'>\n            <a href='<%= url %>' class='btn-play'></a>\n        </div>\n    </div>\n    <div class='description'><%= description %></div>\n</li>";
 
 },{}]},{},[1]);

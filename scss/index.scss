@@ -32,6 +32,10 @@ $nav-active-color: #9A1011;
             background: transparent;
             width: 100%;
             text-align: center;
+
+            &:hover {
+                border-color: transparent;
+            }
         }
     }
 
@@ -97,6 +101,23 @@ $nav-active-color: #9A1011;
     }
 }
 
+.share-hide{
+    display: none;
+}
+
+.bg{
+    background-color: rgba(55, 0, 8, .6);
+    width: 100%;
+    height: 100%;
+    text-align:center;
+    position: absolute;
+    z-index: 2010;
+
+    img {
+        width:85%;
+    }
+}
+
 .photo-view {
     position: absolute;
     background: $bg;
@@ -136,6 +157,10 @@ $nav-active-color: #9A1011;
 
             &.download {
                 text-align: left;
+
+                a {
+                    color: #fff;
+                }
             }
 
             &.heart {
@@ -270,11 +295,14 @@ $nav-active-color: #9A1011;
                 color: darken($color, 10%);
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-height: 65px;
+                max-height:46px;
 
-                p {
-                    margin:0px;
-                    color:#5e5e5e;
+                .content-wrapper{
+                    line-height:19px;
+
+                    p{
+                        margin:0px;
+                    }
                 }
             }
 

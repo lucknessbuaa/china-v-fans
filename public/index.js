@@ -9,6 +9,7 @@ var $ = require("jquery");
 var Backbone = require("backbone");
 Backbone.$ = $;
 require("velocity");
+var Spinner =  require("./components/spin.js/spin");
 
 var CONTENT_ID = 1;
 
@@ -36,6 +37,12 @@ function getPhoto(id) {
     return $.get("/API/output/image/" + id + "/?format=json&content=");
 }
 
+function postPhoto(id) {
+    var request = $.get("/API/likes", {
+        option_id: id
+    }, 'json');
+}
+
 var ViewProto = {
     hide: function() {
         this.$el.hide()
@@ -53,31 +60,48 @@ var ImageView = Backbone.View.extend({
         var tpl = _.template(multiline(function() {
             /*@preserve
             <div class='photo-view'>
+                <div class="share-hide bg">
+                    <img src="../img/arrow.png">
+                </div>
                 <div class='photo-wrapper'>
                 </div>
                 <div class='toolbar'>
                     <div class='share'><span class='glyphicon glyphicon-share'></span></div>
                     <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
-                    <div class='download'><span class='glyphicon glyphicon-download-alt'></span></div>
+                    <div class='download'><a href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
                 <div>
             </div>
             */
             console.log
         }).trim());
 
+        this.imgOptions = {};
+
         this.setElement($(tpl(options))[0]);
         this.$wrapper = this.$el.find('.photo-wrapper')
 
+        this.spinner = new Spinner({color:'#fff', lines: 12});
+        this.spinner.spin(this.$wrapper[0]);
         this.$share = this.$el.find('.share');
         this.$heart = this.$el.find('.heart');
-        this.$download = this.$el.find('.download');
+        this.$download = this.$el.find('.download a');
+        this.$shareHide = this.$el.find('.share-hide');        
+        this.$shareImg = this.$el.find('.share-hide img');
 
         this.$download.click(_.bind(function() {
-            download([this.imageUrl]);
+            
+        }, this));
+
+        this.$shareHide.click(_.bind(function(){
+            this.$shareImg.velocity("fadeOut")
+            this.$shareHide.addClass('share-hide');
+            this.$el.find('.toolbar').removeClass('share-hide');
         }, this));
 
         this.$share.click(_.bind(function() {
-            // TODO show share tip
+            this.$shareHide.removeClass('share-hide');
+            this.$el.find('.toolbar').addClass('share-hide');
+            this.$shareImg.velocity("fadeIn")
         }, this));
 
         this.$heart.click(_.bind(function() {
@@ -85,6 +109,7 @@ var ImageView = Backbone.View.extend({
                 this.$heart.addClass('up');
                 mark(this.imageId);
                 this.markImage(this.imageId);
+                postPhoto(this.imageId);
             } else {
                 unmark(this.imageId);
                 this.unmarkImage(this.imageId);
@@ -134,7 +159,15 @@ var ImageView = Backbone.View.extend({
         getPhoto(id).then(_.bind(function(data) {
             this.imageUrl = data.image;
             this.$wrapper.html("");
-            this.$image = $("<img src='" + data.image + "'>").appendTo(this.$wrapper);
+            this.image = new Image();
+            this.image.src = data.image;
+
+            this.imgOptions.imgUrl = data.image;
+            this.imgOptions.title = data.name;
+
+            this.$download.attr('href', data.image);
+            
+            this.$image = $(this.image);
 
             this.$image.load(_.bind(function() {
                 this.onImageLoad();
@@ -142,12 +175,14 @@ var ImageView = Backbone.View.extend({
         }, this));
     },
 
-    onImageLoad: function() {
-        var imgWidth = this.$image.width();
-        var imgHeight = this.$image.height();
 
-        var wrapperWidth = this.$wrapper.width();
-        var wrapperHeight = this.$wrapper.height();
+
+    onImageLoad: function() {
+        var imgWidth = this.$image[0].naturalWidth;
+        var imgHeight = this.$image[0].naturalHeight;
+
+        var wrapperWidth = window.innerWidth;
+        var wrapperHeight = window.innerHeight;
 
         console.log(imgWidth, imgHeight, wrapperWidth, wrapperHeight);
         this.$wrapper.scrollTop(-(wrapperHeight - imgHeight) / 2);
@@ -159,6 +194,8 @@ var ImageView = Backbone.View.extend({
             this.$image.width(wrapperWidth);
             this.$wrapper.scrollTop(0);
         }
+        this.$image.appendTo(this.$wrapper);
+        this.spinner.stop();
     },
 
     fadeIn: function() {
@@ -201,6 +238,9 @@ var PhotoCell = Backbone.View.extend({
     }
 });
 
+
+
+
 var VideoItem = Backbone.View.extend({
     initialize: function(options) {
         var tpl = _.template(require("./tpl/VideoItem.html").trim());
@@ -208,15 +248,38 @@ var VideoItem = Backbone.View.extend({
 
         this.$wrapper = this.$el.find('.cover');
         this.$image = this.$el.find('img.image');
+        this.spinner = new Spinner({color:'#fff', lines: 12});
+        this.spinner.spin(this.$wrapper[0]);
+        this.resize = false;
+        this.width = window.innerWidth - 40;
+        this.height = 150;
         this.$image.load(_.bind(function() {
-            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
-                this.$image.width(), this.$image.height());
-
-            this.$image.css('width', size.width + 'px');
-            this.$image.css('margin-left', (-size.width / 2) + 'px')
-            this.$image.css('left', '50%');
-            this.$image.show();
+            this.ensureSize();
+            this.spinner.stop();
         }, this));
+    },
+
+    ensureSize: function(){
+        if(this.$image[0].naturalWidth == 0 || this.resize){
+            return;
+        }
+        this.resize = true;
+        console.log('resizing image', this.width, this.height, this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+    },
+
+    loadAgain: function(){
+        if(this.$image[0].naturalWidth == 0){
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        }else{
+            this.ensureSize();
+        }
     }
 });
 
@@ -224,7 +287,7 @@ var VideoListView = BaseView.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
-            <div class='video-list-wrapper'>
+            <div class='video-list-wrapper' id="load">
                 <ul class='video-list list-unstyled'>
             </div>
             */
@@ -232,15 +295,39 @@ var VideoListView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
+    },
 
-        getVideoList(0, 10000).then(_.bind(function(data) {
-            _.each(data.objects, _.bind(function(video) {
-                var item = new VideoItem(video);
-                item.$el.appendTo(this.$list);
-            }, this));
-        }, this), function() {
-            // TODO
-        });
+    show: function() {
+        if(!this.$itemlist){
+            this.$itemlist = [];
+            
+            this.spinner = new Spinner({color:'#fff', lines: 12});
+            this.spinner.spin(document.body);
+            var i = 0;
+            getVideoList(0, 10000).then(_.bind(function(data) {
+                _.each(data.objects, _.bind(function(video) {
+                    var item = new VideoItem(video);
+                
+                    this.$itemlist[i] = item;
+                    item.$el.appendTo(this.$list);
+                    i++;
+                }, this));
+                this.spinner.stop();
+            }, this), function() {
+                // TODO
+            });
+        }else if(this.$itemlist.length == 0){
+
+        }else{
+            this.getLoad();
+        }
+        this.$el.show();
+    },
+
+    getLoad: function(){
+        for(var i = 0; i < this.$itemlist.length; i++){
+            this.$itemlist[i].loadAgain();
+        }
     }
 });
 
@@ -254,7 +341,6 @@ var NewsItem = Backbone.View.extend({
                 <div class='cover-wrapper'>
                     <div class='cover'>
                         <img class='image' style='display: none' src='<%= image %>'>
-                        <a href='#' class='btn-play'></a>
                     </div>
                 </div>
                 <div class='con hi'>
@@ -279,27 +365,48 @@ var NewsItem = Backbone.View.extend({
             if ($temp.hasClass('hi')) {
                 $temp.removeClass('hi');
                 $temp.velocity({
-                    'max-height': ($('.content-wrapper').outerHeight() + 8) + 'px'
+                    'max-height': ($($temp.children()[0]).outerHeight() + 8) + 'px'
                 });
                 $(this).children()[0].innerHTML = '收起';
             } else {
                 $temp.addClass('hi');
                 $temp.velocity({
-                    'max-height': '65px'
+                    'max-height': '46px'
                 });
                 $(this).children()[0].innerHTML = '展开';
             }
         });
+        this.width = window.innerWidth;
+        this.height = 160;
+        this.resize = false;
+        this.spinner = new Spinner({color:'#fff', lines: 12});
+        this.spinner.spin(this.$wrapper[0]);
         this.$image.load(_.bind(function() {
-            console.log('resizing image', this.$wrapper.width(), this.$wrapper.height(), this.$image.width(), this.$image.height());
-            var size = sizing.cover(this.$wrapper.width(), this.$wrapper.height(),
-                this.$image.width(), this.$image.height());
-
-            this.$image.css('width', size.width + 'px');
-            this.$image.css('margin-left', (-size.width / 2) + 'px')
-            this.$image.css('left', '50%');
-            this.$image.show();
+            this.ensureSize();
+            this.spinner.stop();
         }, this));
+    },
+
+    ensureSize: function() {
+        if(this.$image[0].naturalWidth == 0 || this.resize){
+            return;
+        }
+        this.resize = true;
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+
+    },
+
+    loadAgain: function(){
+        if(this.$image[0].naturalWidth == 0){
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        }else{
+            this.ensureSize();
+        }
     }
 });
 
@@ -315,15 +422,39 @@ var NewsView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
+        
+    },
 
-        getNewsList(0, 10000).then(_.bind(function(data) {
-            _.each(data.objects, _.bind(function(article) {
-                var item = new NewsItem(article);
-                item.$el.appendTo(this.$list);
-            }, this));
-        }, this), function() {
+    show: function() {
+        var i = 0;
+        if(!this.$itemlist){
+            this.$itemlist = [];
+            this.spinner = new Spinner({color:'#fff', lines: 12});
+            this.spinner.spin(document.body);
+            getNewsList(0, 10000).then(_.bind(function(data) {
+                _.each(data.objects, _.bind(function(article) {
+                    var item = new NewsItem(article);
+
+                    this.$itemlist[i] = item;
+                    i++;
+                    item.$el.appendTo(this.$list);
+                }, this));
+                this.spinner.stop();
+            }, this), function() {
             // TODO
-        });
+            });
+        }else if(this.$itemlist.length == 0){
+
+        }else{
+            this.getLoad();
+        }
+        this.$el.show();
+    },
+
+    getLoad: function(){
+        for(var i = 0; i < this.$itemlist.length; i++){
+            this.$itemlist[i].loadAgain();
+        }
     }
 });
 
@@ -341,11 +472,16 @@ var PhotoListView = BaseView.extend({
 
         this.setElement($(tpl(options))[0]);
         this.$list = this.$el.find('.photo-list');
-
+        
         this.photoList = [];
+        if(this.photoList.length == 0){
+            this.spinner = new Spinner({color:'#fff', lines: 12});
+            this.spinner.spin(document.body);
+        }
         getPhotoList(0, 20).then(_.bind(function(data) {
             this.photoList = data.objects;
             this.render();
+            this.spinner.stop();
         }, this));
     },
 
@@ -386,6 +522,10 @@ var TabView = Backbone.View.extend({
             var $this = $(this);
             var tab = $this.attr('href');
             self.activate(tab);
+        });
+
+        this.$el.on('tap', function(){
+            this.hide();
         });
 
         this.views = {};
@@ -429,9 +569,9 @@ var FansRouter = Backbone.Router.extend({
 
     ensureTab: function(tab) {
         if (!tabView) {
-            tabView = new TabView
+            tabView = new TabView()
             tabView.$el.appendTo(document.body);
-
+            
             photoListView = new PhotoListView();
             tabView.addTab('photo', photoListView);
 
@@ -470,7 +610,7 @@ var FansRouter = Backbone.Router.extend({
         console.log('set image id');
         this.imageView.setImage(id);
         console.log('fadeIn');
-        this.imageView.fadeIn();
+        //this.imageView.fadeIn();
 
         this.imageView.on('exit', _.bind(function() {
             this.imageView.fadeOut(_.bind(function() {
@@ -487,16 +627,10 @@ var FansRouter = Backbone.Router.extend({
 
     video: function(id) {
         this.ensureTab('video');
-        if (photoListView) {
-            photoListView.hide();
-        }
     },
 
     news: function() {
         this.ensureTab('news');
-        if (photoListView) {
-            photoListView.hide();
-        }
     }
 });
 

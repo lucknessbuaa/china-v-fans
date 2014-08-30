@@ -48,7 +48,7 @@ app.get(/^\/API\/.*$/, function(req, res) {
         headers: {
             host: 'contents.jarvys.me'
         },
-        target: 'http://contents.jarvys.me',
+        target: 'http://contents.jarvys.me/contents/',
     });
 });
 

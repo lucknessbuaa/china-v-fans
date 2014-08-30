@@ -2,7 +2,6 @@ var multiline = require("multiline");
 var _ = require("underscore");
 var multpl = require('multpl');
 var sizing = require('image-sizing');
-var download = require("multi-download");
 var fs = require('fs');
 
 var $ = require("jquery");
@@ -58,9 +57,10 @@ var ImageView = Backbone.View.extend({
                 <div class='photo-wrapper'>
                 </div>
                 <div class='toolbar'>
+                    <div class="length"></div>
                     <div class='share'><span class='glyphicon glyphicon-share'></span></div>
                     <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
-                    <div class='download'><a href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
+                    <a class="download" href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
                 <div>
             </div>
             */
@@ -79,13 +79,9 @@ var ImageView = Backbone.View.extend({
         this.spinner.spin(this.$wrapper[0]);
         this.$share = this.$el.find('.share');
         this.$heart = this.$el.find('.heart');
-        this.$download = this.$el.find('.download a');
+        this.$download = this.$el.find('.download');
         this.$shareHide = this.$el.find('.share-hide');
         this.$shareImg = this.$el.find('.share-hide img');
-
-        this.$download.click(_.bind(function() {
-
-        }, this));
 
         this.$shareHide.click(_.bind(function() {
             this.$shareImg.velocity("fadeOut")
@@ -102,11 +98,9 @@ var ImageView = Backbone.View.extend({
         this.$heart.click(_.bind(function() {
             if (!this.$heart.hasClass('up')) {
                 this.$heart.addClass('up');
-                mark(this.imageId);
                 this.markImage(this.imageId);
                 postPhoto(this.imageId);
             } else {
-                unmark(this.imageId);
                 this.unmarkImage(this.imageId);
                 this.$heart.removeClass('up');
             }
@@ -184,12 +178,13 @@ var ImageView = Backbone.View.extend({
         if (imgWidth / imgHeight > wrapperWidth / wrapperHeight) {
             var width = imgWidth * wrapperHeight / imgHeight;
             this.$image.height(wrapperHeight);
+            this.$image.appendTo(this.$wrapper);
             this.$wrapper.scrollLeft(-(wrapperWidth - width) / 2);
         } else {
             this.$image.width(wrapperWidth);
+            this.$image.appendTo(this.$wrapper);
             this.$wrapper.scrollTop(0);
         }
-        this.$image.appendTo(this.$wrapper);
         this.spinner.stop();
     },
 
@@ -254,6 +249,9 @@ var VideoItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
+        this.$image.error(_.bind(function(){
+            this.spinner.stop();
+        }, this));
     },
 
     ensureSize: function() {
@@ -304,8 +302,7 @@ var VideoListView = BaseView.extend({
                 lines: 12
             });
 
-            this.spinner.spin(document.body);
-            var i = 0;
+            this.spinner.spin(this.$el[0]);
             getVideoList(0, 10000).then(_.bind(function(data) {
                 if (data.objects.length === 0) {
                     return this.$el.addClass('empty');
@@ -315,7 +312,7 @@ var VideoListView = BaseView.extend({
                 _.each(data.objects, _.bind(function(video) {
                     var item = new VideoItem(video);
 
-                    this.itemlist.push(item)
+                    this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
             }, this), _.bind(function() {
@@ -395,6 +392,9 @@ var NewsItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
+        this.$image.error(_.bind(function(){
+            this.spinner.stop();
+        }, this));
     },
 
     ensureSize: function() {
@@ -425,6 +425,7 @@ var NewsView = BaseView.extend({
         var tpl = multpl(function() {
             /*@preserve
             <div class='news-list-wrapper'>
+				<p class='tip'>暂无资讯</p>
                 <ul class='news-list list-unstyled'>
             </div>
             */
@@ -432,41 +433,45 @@ var NewsView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
-
     },
 
     show: function() {
-        var i = 0;
-        if (!this.$itemlist) {
-            this.$itemlist = [];
+        if (!this.itemlist) {
+            this.itemlist = [];
             this.spinner = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(document.body);
+            this.spinner.spin(this.$el[0]);
+            
             getNewsList(0, 10000).then(_.bind(function(data) {
+                if(data.objects.length === 0){
+                    return this.$el.addClass('empty');
+                }
+
+                this.$el.removeClass('empty');
                 _.each(data.objects, _.bind(function(article) {
                     var item = new NewsItem(article);
-
-                    this.$itemlist[i] = item;
-                    i++;
+                    this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
                 this.spinner.stop();
-            }, this), function() {
-                // TODO
-            });
-        } else if (this.$itemlist.length == 0) {
+            }, this), _.bind(function() {
+                this.$el.children('p.tip').html('网络异常');
+                this.$el.addClass('empty');
+            }, this)).always(_.bind(function(){
+                this.spinner.stop();
+            }, this));
 
-        } else {
+        } else if(this.itemlist.length !== 0){
             this.getLoad();
         }
         this.$el.show();
     },
 
     getLoad: function() {
-        for (var i = 0; i < this.$itemlist.length; i++) {
-            this.$itemlist[i].loadAgain();
+        for (var i = 0; i < this.itemlist.length; i++) {
+            this.itemlist[i].loadAgain();
         }
     }
 });
@@ -476,6 +481,7 @@ var PhotoListView = BaseView.extend({
         var tpl = _.template(multiline(function() {
             /*@preserve
             <div class='photo-list-wrapper'>
+                <p class="tip">暂无照片</p>
                 <ul class='photo-list clearfix list-unstyled'>
                 </ul>
             </div>
@@ -487,16 +493,25 @@ var PhotoListView = BaseView.extend({
         this.$list = this.$el.find('.photo-list');
 
         this.photoList = [];
-        if (this.photoList.length == 0) {
+        if (this.photoList.length === 0) {
             this.spinner = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(document.body);
+            this.spinner.spin(this.$el[0]);
         }
         getPhotoList(0, 20).then(_.bind(function(data) {
+            if(data.objects.length === 0){
+                return this.$el.addClass('empty');
+            }
+
+            this.$el.removeClass('empty');
             this.photoList = data.objects;
             this.render();
+        }, this), _.bind(function(){
+            this.$el.children('p.tip').html('网络异常');
+            this.$el.addClass('empty');
+        }, this)).always(_.bind(function(){
             this.spinner.stop();
         }, this));
     },

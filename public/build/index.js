@@ -12587,7 +12587,6 @@ var multiline = require("multiline");
 var _ = require("underscore");
 var multpl = require('multpl');
 var sizing = require('image-sizing');
-var download = require("multi-download");
 var fs = require('fs');
 
 var $ = (typeof window !== "undefined" ? window.$ : typeof global !== "undefined" ? global.$ : null);
@@ -12643,9 +12642,10 @@ var ImageView = Backbone.View.extend({
                 <div class='photo-wrapper'>
                 </div>
                 <div class='toolbar'>
+                    <div class="length"></div>
                     <div class='share'><span class='glyphicon glyphicon-share'></span></div>
                     <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
-                    <div class='download'><a href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
+                    <a class="download" href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
                 <div>
             </div>
             */
@@ -12664,13 +12664,9 @@ var ImageView = Backbone.View.extend({
         this.spinner.spin(this.$wrapper[0]);
         this.$share = this.$el.find('.share');
         this.$heart = this.$el.find('.heart');
-        this.$download = this.$el.find('.download a');
+        this.$download = this.$el.find('.download');
         this.$shareHide = this.$el.find('.share-hide');
         this.$shareImg = this.$el.find('.share-hide img');
-
-        this.$download.click(_.bind(function() {
-
-        }, this));
 
         this.$shareHide.click(_.bind(function() {
             this.$shareImg.velocity("fadeOut")
@@ -12687,11 +12683,9 @@ var ImageView = Backbone.View.extend({
         this.$heart.click(_.bind(function() {
             if (!this.$heart.hasClass('up')) {
                 this.$heart.addClass('up');
-                mark(this.imageId);
                 this.markImage(this.imageId);
                 postPhoto(this.imageId);
             } else {
-                unmark(this.imageId);
                 this.unmarkImage(this.imageId);
                 this.$heart.removeClass('up');
             }
@@ -12769,12 +12763,13 @@ var ImageView = Backbone.View.extend({
         if (imgWidth / imgHeight > wrapperWidth / wrapperHeight) {
             var width = imgWidth * wrapperHeight / imgHeight;
             this.$image.height(wrapperHeight);
+            this.$image.appendTo(this.$wrapper);
             this.$wrapper.scrollLeft(-(wrapperWidth - width) / 2);
         } else {
             this.$image.width(wrapperWidth);
+            this.$image.appendTo(this.$wrapper);
             this.$wrapper.scrollTop(0);
         }
-        this.$image.appendTo(this.$wrapper);
         this.spinner.stop();
     },
 
@@ -12839,6 +12834,9 @@ var VideoItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
+        this.$image.error(_.bind(function(){
+            this.spinner.stop();
+        }, this));
     },
 
     ensureSize: function() {
@@ -12889,8 +12887,7 @@ var VideoListView = BaseView.extend({
                 lines: 12
             });
 
-            this.spinner.spin(document.body);
-            var i = 0;
+            this.spinner.spin(this.$el[0]);
             getVideoList(0, 10000).then(_.bind(function(data) {
                 if (data.objects.length === 0) {
                     return this.$el.addClass('empty');
@@ -12900,7 +12897,7 @@ var VideoListView = BaseView.extend({
                 _.each(data.objects, _.bind(function(video) {
                     var item = new VideoItem(video);
 
-                    this.itemlist.push(item)
+                    this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
             }, this), _.bind(function() {
@@ -12980,6 +12977,9 @@ var NewsItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
+        this.$image.error(_.bind(function(){
+            this.spinner.stop();
+        }, this));
     },
 
     ensureSize: function() {
@@ -13010,6 +13010,7 @@ var NewsView = BaseView.extend({
         var tpl = multpl(function() {
             /*@preserve
             <div class='news-list-wrapper'>
+				<p class='tip'>暂无资讯</p>
                 <ul class='news-list list-unstyled'>
             </div>
             */
@@ -13017,41 +13018,45 @@ var NewsView = BaseView.extend({
         });
         this.setElement($(tpl(options).trim()));
         this.$list = this.$el.children('ul');
-
     },
 
     show: function() {
-        var i = 0;
-        if (!this.$itemlist) {
-            this.$itemlist = [];
+        if (!this.itemlist) {
+            this.itemlist = [];
             this.spinner = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(document.body);
+            this.spinner.spin(this.$el[0]);
+            
             getNewsList(0, 10000).then(_.bind(function(data) {
+                if(data.objects.length === 0){
+                    return this.$el.addClass('empty');
+                }
+
+                this.$el.removeClass('empty');
                 _.each(data.objects, _.bind(function(article) {
                     var item = new NewsItem(article);
-
-                    this.$itemlist[i] = item;
-                    i++;
+                    this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
                 this.spinner.stop();
-            }, this), function() {
-                // TODO
-            });
-        } else if (this.$itemlist.length == 0) {
+            }, this), _.bind(function() {
+                this.$el.children('p.tip').html('网络异常');
+                this.$el.addClass('empty');
+            }, this)).always(_.bind(function(){
+                this.spinner.stop();
+            }, this));
 
-        } else {
+        } else if(this.itemlist.length !== 0){
             this.getLoad();
         }
         this.$el.show();
     },
 
     getLoad: function() {
-        for (var i = 0; i < this.$itemlist.length; i++) {
-            this.$itemlist[i].loadAgain();
+        for (var i = 0; i < this.itemlist.length; i++) {
+            this.itemlist[i].loadAgain();
         }
     }
 });
@@ -13061,6 +13066,7 @@ var PhotoListView = BaseView.extend({
         var tpl = _.template(multiline(function() {
             /*@preserve
             <div class='photo-list-wrapper'>
+                <p class="tip">暂无照片</p>
                 <ul class='photo-list clearfix list-unstyled'>
                 </ul>
             </div>
@@ -13072,16 +13078,25 @@ var PhotoListView = BaseView.extend({
         this.$list = this.$el.find('.photo-list');
 
         this.photoList = [];
-        if (this.photoList.length == 0) {
+        if (this.photoList.length === 0) {
             this.spinner = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(document.body);
+            this.spinner.spin(this.$el[0]);
         }
         getPhotoList(0, 20).then(_.bind(function(data) {
+            if(data.objects.length === 0){
+                return this.$el.addClass('empty');
+            }
+
+            this.$el.removeClass('empty');
             this.photoList = data.objects;
             this.render();
+        }, this), _.bind(function(){
+            this.$el.children('p.tip').html('网络异常');
+            this.$el.addClass('empty');
+        }, this)).always(_.bind(function(){
             this.spinner.stop();
         }, this));
     },
@@ -13244,8 +13259,9 @@ $(function() {
         pushState: true
     });
 });
+
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./components/spin.js/spin":10,"./tpl/VideoItem.html":11,"backbone":2,"fs":3,"image-sizing":4,"multi-download":5,"multiline":6,"multpl":8,"underscore":9}],2:[function(require,module,exports){
+},{"./components/spin.js/spin":9,"./tpl/VideoItem.html":10,"backbone":2,"fs":3,"image-sizing":4,"multiline":5,"multpl":7,"underscore":8}],2:[function(require,module,exports){
 //     Backbone.js 1.1.2
 
 //     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -14855,7 +14871,7 @@ $(function() {
 
 }));
 
-},{"underscore":9}],3:[function(require,module,exports){
+},{"underscore":8}],3:[function(require,module,exports){
 
 },{}],4:[function(require,module,exports){
 function cover(outerWidth, outerHeight, indeedWidth, indeedHeight) {
@@ -14877,85 +14893,6 @@ module.exports = {
 };
 
 },{}],5:[function(require,module,exports){
-(function () {
-	'use strict';
-
-	function fallback(urls) {
-		var i = 0;
-
-		(function createIframe() {
-			var frame = document.createElement('iframe');
-			frame.style.display = 'none';
-			frame.src = urls[i++];
-			document.documentElement.appendChild(frame);
-
-			// the download init has to be sequential otherwise IE only use the first
-			var interval = setInterval(function () {
-				if (frame.contentWindow.document.readyState === 'complete') {
-					clearInterval(interval);
-
-					// Safari needs a timeout
-					setTimeout(function () {
-						frame.parentNode.removeChild(frame);
-					}, 1000);
-
-					if (i < urls.length) {
-						createIframe();
-					}
-				}
-			}, 100);
-		})();
-	}
-
-	function isFirefox() {
-		// sad panda :(
-		return /Firefox\//i.test(navigator.userAgent);
-	}
-
-	function sameDomain(url) {
-		var a = document.createElement('a');
-		a.href = url;
-
-		return location.hostname === a.hostname && location.protocol === a.protocol;
-	}
-
-	function download(url) {
-		var a = document.createElement('a');
-		a.download = '';
-		a.href = url;
-		// firefox doesn't support `a.click()`...
-		a.dispatchEvent(new MouseEvent('click'));
-	}
-
-	function multiDownload(urls) {
-		if (!urls) {
-			throw new Error('`urls` required');
-		}
-
-		if (typeof document.createElement('a').download === 'undefined') {
-			return fallback(urls);
-		}
-
-		var delay = 0;
-
-		urls.forEach(function (url) {
-			// the download init has to be sequential for firefox if the urls are not on the same domain
-			if (isFirefox() && !sameDomain(url)) {
-				return setTimeout(download.bind(null, url), 100 * ++delay);
-			}
-
-			download(url);
-		});
-	}
-
-	if (typeof module !== 'undefined' && module.exports) {
-		module.exports = multiDownload;
-	} else {
-		window.multiDownload = multiDownload;
-	}
-})();
-
-},{}],6:[function(require,module,exports){
 'use strict';
 var stripIndent = require('strip-indent');
 
@@ -14981,7 +14918,7 @@ multiline.stripIndent = function (fn) {
 	return stripIndent(multiline(fn));
 };
 
-},{"strip-indent":7}],7:[function(require,module,exports){
+},{"strip-indent":6}],6:[function(require,module,exports){
 'use strict';
 module.exports = function (str) {
 	var match = str.match(/^[ \t]*(?=\S)/gm);
@@ -14999,7 +14936,7 @@ module.exports = function (str) {
 	return indent > 0 ? str.replace(re, '') : str;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var template = require('underscore').template;
 var multiline = require('multiline');
 
@@ -15008,7 +14945,7 @@ module.exports = function(fn) {
 }
 
 
-},{"multiline":6,"underscore":9}],9:[function(require,module,exports){
+},{"multiline":5,"underscore":8}],8:[function(require,module,exports){
 //     Underscore.js 1.6.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -16353,7 +16290,7 @@ module.exports = function(fn) {
   }
 }).call(this);
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /**
  * Copyright (c) 2011-2014 Felix Gnass
  * Licensed under the MIT license
@@ -16704,7 +16641,7 @@ module.exports = function(fn) {
 
 }));
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = "<li class='video-item'>\n    <div class='title'><%= name %></div>\n    <div class='date'>2014-08-09</div>\n    <div class='cover-wrapper'>\n        <div class='cover'>\n            <img class='image' style='display: none' src='<%= image %>'>\n            <a href='<%= url %>' class='btn-play'></a>\n        </div>\n    </div>\n    <div class='description'><%= description %></div>\n</li>";
 
 },{}]},{},[1]);

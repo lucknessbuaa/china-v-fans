@@ -22,23 +22,23 @@ function unmark(id) {
 }
 
 function getVideoList(offset, limit) {
-    return $.get("/API/output/video/?format=json&content=" + CONTENT_ID);
+    return $.get("/contents/API/output/video/?format=json&content=" + CONTENT_ID);
 }
 
 function getPhotoList(offset, limit) {
-    return $.get("/API/output/image/?format=json&content=" + CONTENT_ID);
+    return $.get("/contents/API/output/image/?format=json&content=" + CONTENT_ID);
 }
 
 function getNewsList(offset, limit) {
-    return $.get("/API/output/article/?format=json&content=" + CONTENT_ID);
+    return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
 function getPhoto(id) {
-    return $.get("/API/output/image/" + id + "/?format=json&content=");
+    return $.get("/contents/API/output/image/" + id + "/?format=json&content=");
 }
 
 function postPhoto(id) {
-    var request = $.get("/API/likes", {
+    var request = $.get("/contents/API/likes", {
         option_id: id
     }, 'json');
 }

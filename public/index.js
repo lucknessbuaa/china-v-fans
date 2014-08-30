@@ -506,7 +506,6 @@ var PhotoListView = BaseView.extend({
             var view = new PhotoCell(photo);
             view.on('click', _.bind(function() {
                 Backbone.history.navigate("/photo/" + photo.id, {
-                    replace: 'pushState',
                     trigger: true
                 });
             }, this));
@@ -549,7 +548,7 @@ var TabView = Backbone.View.extend({
 
     activate: function(tab) {
         Backbone.history.navigate(tab, {
-            replace: 'replaceState'
+            replace: true
         });
 
         var activeTab = this.getActiveTab();
@@ -606,7 +605,23 @@ var FansRouter = Backbone.Router.extend({
         tabView.activate(tab);
     },
 
+    popupImageView: function() {
+        this.imageView.fadeOut(_.bind(function() {
+            this.imageView.destroy();
+            this.imageView = null;
+        }, this));
+
+        Backbone.history.navigate("/photo", {
+            replace: true,
+            trigger: true
+        });
+    },
+
     photoList: function() {
+        if (this.imageView) {
+            this.popupImageView();
+        }
+
         this.ensureTab('photo');
 
         if (!photoListView) {
@@ -628,17 +643,7 @@ var FansRouter = Backbone.Router.extend({
         console.log('fadeIn');
         //this.imageView.fadeIn();
 
-        this.imageView.on('exit', _.bind(function() {
-            this.imageView.fadeOut(_.bind(function() {
-                this.imageView.destroy();
-                this.imageView = null;
-            }, this));
-
-            Backbone.history.navigate("/photo", {
-                replace: 'replaceState',
-                trigger: true
-            });
-        }, this));
+        this.imageView.on('exit', _.bind(this.popupImageView, this));
     },
 
     video: function(id) {

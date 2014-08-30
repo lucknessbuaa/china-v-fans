@@ -23,28 +23,28 @@ app.use(morgan('dev'));
 app.use("/fans/", express.static(__dirname + "/public"));
 app.engine('jade', require('jade').__express);
 
-var router = express.Router();
+var fansRouter = express.Router();
 
-router.get('/', function(req, res) {
+fansRouter.get('/', function(req, res) {
     return res.redirect('photo');
 });
 
-router.get('/photo/:id?', function(req, res) {
+fansRouter.get('/photo/:id?', function(req, res) {
     return res.render('index.jade');
 });
 
-router.get('/video', function(req, res) {
+fansRouter.get('/video', function(req, res) {
     return res.render('index.jade');
 });
 
-router.get('/news', function(req, res) {
+fansRouter.get('/news', function(req, res) {
     return res.render('index.jade');
 });
-
-app.use("/fans", router);
 
 // proxy /contents/API/...
-app.get(/^\/contents\/API\/.*$/, function(req, res) {
+var apiRouter = express.Router();
+
+apiRouter.get(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
             host: 'contents.jarvys.me'
@@ -53,13 +53,19 @@ app.get(/^\/contents\/API\/.*$/, function(req, res) {
     });
 });
 
-app.post(/^\/contents\/API\/.*$/, function(req, res) {
+apiRouter.post(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
             host: 'contents.jarvys.me'
         },
         target: 'http://contents.jarvys.me',
     });
+});
+
+app.use("/fans", fansRouter);
+app.use("/", apiRouter);
+app.get("/", function(req, res) {
+    res.redirect('/fans');
 });
 
 app.listen(parseInt(args.port), function() {

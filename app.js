@@ -43,6 +43,7 @@ router.get('/news', function(req, res) {
 
 app.use("/fans", router);
 
+// proxy /contents/API/...
 app.get(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {

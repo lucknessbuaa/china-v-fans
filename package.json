@@ -36,7 +36,6 @@
     "jade": "^1.5.0",
     "minimist": "^1.1.0",
     "morgan": "^1.2.3",
-    "multi-download": "^1.0.0",
     "multiline": "^1.0.0",
     "multpl": "0.0.3",
     "underscore": "^1.6.0",

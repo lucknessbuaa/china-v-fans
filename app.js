@@ -47,18 +47,18 @@ var apiRouter = express.Router();
 apiRouter.get(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
-            host: 'contents.jarvys.me'
+            host: 'wx.jdb.cn'
         },
-        target: 'http://contents.jarvys.me',
+        target: 'http://wx.jdb.cn/',
     });
 });
 
 apiRouter.post(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
-            host: 'contents.jarvys.me'
+            host: 'wx.jdb.cn'
         },
-        target: 'http://contents.jarvys.me',
+        target: 'http://wx.jdb.cn'
     });
 });
 

@@ -56,6 +56,17 @@ $nav-active-color: #9A1011;
     top: 0px;
     padding: 50px 5px 0px;
     overflow: auto;
+
+	p.tip {
+		display: none;
+		padding: 6px 12px;
+		text-align: center;
+	}
+
+	&.empty p {
+		display: block;
+	}
+
 }
 
 .photo-list {
@@ -143,24 +154,21 @@ $nav-active-color: #9A1011;
         background: rgba(0, 0, 0, .6);
         height: 40px;
 
+
         div {
             float: left;
-            width: 33.3%;
+            width: 25%;
             color: #fff;
             font-size: 20px;
             line-height: 20px;
             padding: 10px;
 
-            &.share {
-                text-align: right;
+            &.length{
+                width:12.5%;
             }
 
-            &.download {
-                text-align: left;
-
-                a {
-                    color: #fff;
-                }
+            &.share {
+                text-align: center;
             }
 
             &.heart {
@@ -172,6 +180,23 @@ $nav-active-color: #9A1011;
                 text-align: center;
             }
         }
+        .download {
+            float: left;
+            width: 25%;
+            color: #fff;
+            font-size: 20px;
+            line-height: 20px;
+            padding: 10px;
+            text-align: center;
+
+            a {
+                color: #fff;
+            }
+            &:hover{
+                cursor:default;
+            }
+        }
+
     }
 }
 
@@ -260,6 +285,16 @@ $nav-active-color: #9A1011;
     overflow: auto;
     padding-top: 50px;
     height: 100%;
+
+	p.tip {
+		display: none;
+		padding: 6px 12px;
+		text-align: center;
+	}
+
+	&.empty p {
+		display: block;
+	}
 
     .news-list {
 

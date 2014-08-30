@@ -4708,6 +4708,12 @@ body {
   overflow: auto;
   padding-top: 50px;
   height: 100%; }
+  .video-list-wrapper p.tip {
+    display: none;
+    padding: 6px 12px;
+    text-align: center; }
+  .video-list-wrapper.empty p {
+    display: block; }
   .video-list-wrapper .video-list .video-item {
     border-bottom: 1px solid #9a1011; }
     .video-list-wrapper .video-list .video-item:last-child {

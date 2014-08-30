@@ -43,7 +43,8 @@ router.get('/news', function(req, res) {
 
 app.use("/fans", router);
 
-app.get(/^\/API\/.*$/, function(req, res) {
+// proxy /contents/API/...
+app.get(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
             host: 'contents.jarvys.me'
@@ -52,7 +53,7 @@ app.get(/^\/API\/.*$/, function(req, res) {
     });
 });
 
-app.post(/^\/API\/.*$/, function(req, res) {
+app.post(/^\/contents\/API\/.*$/, function(req, res) {
     proxy.web(req, res, {
         headers: {
             host: 'contents.jarvys.me'

@@ -180,7 +180,20 @@ $nav-active-color: #9A1011;
     padding-top: 50px;
     height: 100%;
 
+	p.tip {
+		display: none;
+		padding: 6px 12px;
+		text-align: center;
+	}
+
+	&.empty p {
+		display: block;
+	}
+
     .video-list {
+
+		
+
 
         .video-item {
             $color: #9a1011;

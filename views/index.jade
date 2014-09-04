@@ -8,12 +8,25 @@ html(lang="en")
         link(rel="stylesheet", href="/fans/css/index.css")
         script(type="text/javascript", src="/fans/components/wechat-share/browser.js")
         script(type="text/javascript").
-            wechatshare({
-                link: "http://wx.jdb.cn/",
-                desc: '夏天有三宝，V罐、好声音、加多宝',
-                title: '正宗凉茶的无限可能',
-                imgUrl: "http://wx.jdb.cn/static/img/share.jpg"
-            });
+            function getTitle(){
+                var title = document.getElementById('wechat-share') ? "加多宝中国好声音正宗V海报" : "正宗凉茶的无限可能";
+                return title;       
+            }
+            function getDesc(){
+                var desc = document.getElementById('wechat-share') ? "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~" : "夏天有三宝，V罐、好声音、加多宝";
+                return desc;       
+            }
+            wechatshare(
+                function fn(){
+                    var data = {
+                        link: "http://wx.jdb.cn/",
+                        desc: getDesc(),
+                        title: getTitle(),
+                        imgUrl: 'http://wx.jdb.cn/static/img/share.jpg'
+                    }
+                    return data;
+                }
+            );
 
     body
         div.content

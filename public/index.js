@@ -8,7 +8,9 @@ var $ = require("jquery");
 var Backbone = require("backbone");
 Backbone.$ = $;
 require("velocity");
+var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
+require('./components/wechat-share/index');
 
 var CONTENT_ID = 1;
 
@@ -24,13 +26,28 @@ function getNewsList(offset, limit) {
     return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
+function getPictureList(offset, limit) {
+    return $.get("/contents/API/output/bigpicture/?format=json");
+}
+
 function getPhoto(id) {
     return $.get("/contents/API/output/image/" + id + "/?format=json&content=");
 }
 
+function getNews(id) {
+    return $.get("/contents/API/output/article/" + id + "/?format=json&content=");
+}
+
 function postPhoto(id) {
-    var request = $.get("/contents/API/likes", {
+    var request = $.post("/contents/API/likes", {
         option_id: id
+    }, 'json');
+}
+
+function postLog(id, uid) {
+    var request = $.post("/contents/API/logs", {
+        option_id: id,
+        uid: uid
     }, 'json');
 }
 
@@ -46,11 +63,79 @@ var ViewProto = {
 
 var BaseView = Backbone.View.extend(ViewProto);
 
+var NewsDetail = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = _.template(multiline(function() {
+            /*@preserve
+            <div class='news-detail'>
+                <div class='title'></div>
+                <div class='date'></div>
+                <div class='cover-wrapper'>
+                    <div class='cover'>
+                    </div>
+                </div>
+                <div class='con hi'>
+                    <div class='content-wrapper'>
+                    </div>
+                </div>
+            </div>
+            */
+        }).trim());
+        this.setElement($(tpl(options))[0]);
+
+        this.$title = this.$el.find('.title');
+        this.$date = this.$el.find('.date');
+        this.$content = this.$el.find('.content-wrapper');
+        this.$wrapper = this.$el.find('.cover');
+        this.width = window.innerWidth;
+        this.height = 160;
+        this.spinner = new Spinner({
+            color: '#fff',
+            lines: 12
+        });
+        this.spinner.spin(this.$wrapper[0]);
+        this.$el.click(_.bind(function() {
+            this.trigger('exit');
+        }, this));
+    },
+
+    setNews: function(id){
+        getNews(id).then(_.bind(function(data) {
+            this.$wrapper.html("");
+            this.image = new Image();
+            this.image.src = data.image;
+            this.$image = $(this.image);
+
+            this.$image.load(_.bind(function(){
+                this.onImageLoad();
+            }, this));
+            this.$title[0].innerHTML = data.name;
+            this.$date[0].innerHTML = "2014-08-09";
+            this.$content[0].innerHTML = data.contents;
+        }, this)).always(_.bind(function(){
+            this.spinner.stop();
+        }, this));
+    },
+
+    onImageLoad: function(){
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.appendTo(this.$wrapper);
+    },
+
+    destroy: function() {
+        this.$el.remove();
+    }
+});
+
 var ImageView = Backbone.View.extend({
     initialize: function(options) {
         var tpl = _.template(multiline(function() {
             /*@preserve
-            <div class='photo-view'>
+            <div class='photo-view' id='wechat-share'>
                 <div class="share-hide bg">
                     <img src="../img/arrow.png">
                 </div>
@@ -161,6 +246,8 @@ var ImageView = Backbone.View.extend({
             this.$image.load(_.bind(function() {
                 this.onImageLoad();
             }, this));
+        }, this)).always(_.bind(function(){
+            this.spinner.stop();
         }, this));
     },
 
@@ -185,7 +272,6 @@ var ImageView = Backbone.View.extend({
             this.$image.appendTo(this.$wrapper);
             this.$wrapper.scrollTop(0);
         }
-        this.spinner.stop();
     },
 
     fadeIn: function() {
@@ -224,6 +310,7 @@ var PhotoCell = Backbone.View.extend({
         this.setElement($(tpl(options))[0]);
         this.$el.click(_.bind(function() {
             this.trigger('click');
+            postLog(options.resource_uri, uid());
         }, this));
     }
 });
@@ -237,6 +324,7 @@ var VideoItem = Backbone.View.extend({
 
         this.$wrapper = this.$el.find('.cover');
         this.$image = this.$el.find('img.image');
+        this.$btn = this.$el.find('.btn-play');
         this.spinner = new Spinner({
             color: '#fff',
             lines: 12
@@ -312,6 +400,7 @@ var VideoListView = BaseView.extend({
                 _.each(data.objects, _.bind(function(video) {
                     var item = new VideoItem(video);
 
+                    postLog(video.resource_uri, uid());  
                     this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
@@ -335,6 +424,7 @@ var VideoListView = BaseView.extend({
     }
 });
 
+
 var NewsItem = Backbone.View.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
@@ -352,7 +442,7 @@ var NewsItem = Backbone.View.extend({
                         <%=contents %>
                     </div>
                 </div>
-                <div class='open'><span>展开</span></div>
+                <div class='detail'><span>详情</span></div>
             </li>
             */
             console.log
@@ -361,25 +451,14 @@ var NewsItem = Backbone.View.extend({
 
         this.$wrapper = this.$el.find('.cover');
         this.$image = this.$el.find('img.image');
-        this.$open = this.$el.find('.open');
         this.$con = this.$el.find('.con');
-        this.$open.click(function() {
-            var temp = $(this).parent().children()[3];
-            var $temp = $(temp);
-            if ($temp.hasClass('hi')) {
-                $temp.removeClass('hi');
-                $temp.velocity({
-                    'max-height': ($($temp.children()[0]).outerHeight() + 8) + 'px'
-                });
-                $(this).children()[0].innerHTML = '收起';
-            } else {
-                $temp.addClass('hi');
-                $temp.velocity({
-                    'max-height': '46px'
-                });
-                $(this).children()[0].innerHTML = '展开';
-            }
-        });
+        this.$detail = this.$el.find('.detail');
+
+        this.$detail.click(_.bind(function(){
+            Backbone.history.navigate("/news/" + options.id, {
+                trigger: true
+            });
+        }, this));
         this.width = window.innerWidth;
         this.height = 160;
         this.resize = false;
@@ -476,12 +555,223 @@ var NewsView = BaseView.extend({
     }
 });
 
+var StudentItem = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <li class='news-item'>
+                <div class='title'><%= name %></div>
+                <div class='date'>2014-08-09</div>
+                <div class='cover-wrapper'>
+                    <div class='cover'>
+                        <img class='image' style='display: none' src='<%= image %>'>
+                    </div>
+                </div>
+                <div class='con hi'>
+                    <div class='content-wrapper'>
+                        <%=contents %>
+                    </div>
+                </div>
+                <div class='detail'><span>详情</span></div>
+            </li>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+
+        this.$wrapper = this.$el.find('.cover');
+        this.$image = this.$el.find('img.image');
+        this.$con = this.$el.find('.con');
+        this.$detail = this.$el.find('.detail');
+
+        this.$detail.click(_.bind(function(){
+            Backbone.history.navigate("/news/" + options.id, {
+                trigger: true
+            });
+        }, this));
+        this.width = window.innerWidth;
+        this.height = 160;
+        this.resize = false;
+        this.spinner = new Spinner({
+            color: '#fff',
+            lines: 12
+        });
+        this.spinner.spin(this.$wrapper[0]);
+        this.$image.load(_.bind(function() {
+            this.ensureSize();
+            this.spinner.stop();
+        }, this));
+        this.$image.error(_.bind(function(){
+            this.spinner.stop();
+        }, this));
+    },
+
+    ensureSize: function() {
+        if (this.$image[0].naturalWidth == 0 || this.resize) {
+            return;
+        }
+        this.resize = true;
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+
+    },
+
+    loadAgain: function() {
+        if (this.$image[0].naturalWidth == 0) {
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        } else {
+            this.ensureSize();
+        }
+    }
+});
+
+var BigPicture = Backbone.View.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <li class='news-item'>
+                <a href="#" class="picture-link">
+                    <img src="<%= image %>">
+                </a>
+            </li>
+            */
+        });
+
+        this.setElement($(tpl(options).trim()));
+    },
+
+    ensureSize: function() {
+        if (this.$image[0].naturalWidth == 0 || this.resize) {
+            return;
+        }
+        this.resize = true;
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        this.$image.css('width', size.width + 'px');
+        this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+
+    },
+
+    loadAgain: function() {
+        if (this.$image[0].naturalWidth == 0) {
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        } else {
+            this.ensureSize();
+        }
+    }
+});
+
+var StudentPage = BaseView.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <div class='student-page'>
+                <div class='big-picture scroll-banner'>
+				    <p class='tip'>暂无图片</p>
+                    <ul class="box picture-list list-unstyled">
+                </div>
+                <div class='article-list-wrapper'>
+				    <p class='tip'>暂无资讯</p>
+                    <ul class='article-list list-unstyled'>     
+                </div>
+            <div>
+            */
+            console.log
+        });
+        this.setElement($(tpl(options).trim()));
+        this.$list = this.$el.find('.article-list');
+        this.$pictureList = this.$el.find('.picture-list');
+    },
+
+    show: function() {
+        if (!this.itemlist) {
+            this.itemlist = [];
+            this.spinner = new Spinner({
+                color: '#fff',
+                lines: 12
+            });
+            this.spinner.spin(this.$el[0]);
+            
+            getNewsList(0, 10000).then(_.bind(function(data) {
+                if(data.objects.length === 0){
+                    return this.$el.addClass('empty');
+                }
+
+                this.$el.removeClass('empty');
+                _.each(data.objects, _.bind(function(article) {
+                    var item = new StudentItem(article);
+                    this.itemlist.push(item);
+                    item.$el.appendTo(this.$list);
+                }, this));
+                this.spinner.stop();
+            }, this), _.bind(function() {
+                this.$el.children('p.tip').html('网络异常');
+                this.$el.addClass('empty');
+            }, this)).always(_.bind(function(){
+                this.spinner.stop();
+            }, this));
+
+        } else if(this.itemlist.length !== 0){
+            this.getLoad();
+        }
+
+        if (!this.picturelist) {
+            this.picturelist = [];
+            this.spinner = new Spinner({
+                color: '#fff',
+                lines: 12
+            });
+            this.spinner.spin(this.$el[0]);
+            
+            getPictureList(0, 10000).then(_.bind(function(data) {
+                if(data.objects.length === 0){
+                    return this.$el.addClass('empty');
+                }
+
+                this.$el.removeClass('empty');
+                _.each(data.objects, _.bind(function(article) {
+                    var item = new BigPicture(article);
+                    this.picturelist.push(item);
+                    item.$el.appendTo(this.$pictureList);
+                }, this));
+                this.spinner.stop();
+            }, this), _.bind(function() {
+                this.$el.children('p.tip').html('网络异常');
+                this.$el.addClass('empty');
+            }, this)).always(_.bind(function(){
+                this.spinner.stop();
+            }, this));
+
+        } else if(this.picturelist.length !== 0){
+            this.getPictureLoad();
+        }
+        this.$el.show();
+    },
+
+    getPictureLoad: function() {
+        for (var i = 0; i < this.picturelist.length; i++) {
+            this.picturelist[i].loadAgain();
+        }
+    },
+
+    getLoad: function() {
+        for (var i = 0; i < this.itemlist.length; i++) {
+            this.itemlist[i].loadAgain();
+        }
+    }
+});
+
 var PhotoListView = BaseView.extend({
     initialize: function(options) {
         var tpl = _.template(multiline(function() {
             /*@preserve
             <div class='photo-list-wrapper'>
-                <p class="tip">暂无照片</p>
                 <ul class='photo-list clearfix list-unstyled'>
                 </ul>
             </div>
@@ -594,7 +884,9 @@ var FansRouter = Backbone.Router.extend({
         "photo": "photoList",
         "photo/:id": "photo",
         "video": "video",
-        "news": "news"
+        "news": "news",
+        "news/:id": "newsDetails",
+        "student": "students",
     },
 
     ensureTab: function(tab) {
@@ -666,7 +958,39 @@ var FansRouter = Backbone.Router.extend({
     },
 
     news: function() {
+        if(this.newsDetail){
+            this.newsExit();
+        }
         this.ensureTab('news');
+    },
+
+    newsExit: function(){
+        this.newsDetail.destroy();
+        this.newsDetail = null;
+
+        Backbone.history.navigate("/news", {
+            replace: true,
+            trigger: true
+        });
+    },
+
+    newsDetails: function(id) {
+        if(!this.newsDetail){
+            this.newsDetail = new NewsDetail();
+            this.newsDetail.$el.appendTo($(".content"));
+        }
+
+        this.newsDetail.setNews(id);
+        this.newsDetail.on('exit', _.bind(this.newsExit, this));
+    },
+
+    students: function(){
+        if(!this.studentPage){
+            this.studentPage = new StudentPage();
+            this.studentPage.$el.appendTo($(".content"));
+        }
+
+        this.studentPage.show();
     }
 });
 

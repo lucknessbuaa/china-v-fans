@@ -310,7 +310,7 @@ var PhotoCell = Backbone.View.extend({
         this.setElement($(tpl(options))[0]);
         this.$el.click(_.bind(function() {
             this.trigger('click');
-            postLog(options.resource_uri, uid());
+            postLog(options.id, uid());
         }, this));
     }
 });
@@ -400,7 +400,7 @@ var VideoListView = BaseView.extend({
                 _.each(data.objects, _.bind(function(video) {
                     var item = new VideoItem(video);
 
-                    postLog(video.resource_uri, uid());  
+                    postLog(video.id, uid());  
                     this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
@@ -455,6 +455,7 @@ var NewsItem = Backbone.View.extend({
         this.$detail = this.$el.find('.detail');
 
         this.$detail.click(_.bind(function(){
+            postLog(options.id, uid());
             Backbone.history.navigate("/news/" + options.id, {
                 trigger: true
             });

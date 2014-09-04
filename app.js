@@ -41,6 +41,14 @@ fansRouter.get('/news', function(req, res) {
     return res.render('index.jade');
 });
 
+fansRouter.get('/news/:id?', function(req, res) {
+    return res.render('index.jade');
+});
+
+//fansRouter.get('/student', function(req, res) {
+//    return res.render('index.jade');
+//});
+
 // proxy /contents/API/...
 var apiRouter = express.Router();
 
@@ -58,7 +66,7 @@ apiRouter.post(/^\/contents\/API\/.*$/, function(req, res) {
         headers: {
             host: 'wx.jdb.cn'
         },
-        target: 'http://wx.jdb.cn'
+        target: 'http://wx.jdb.cn/'
     });
 });
 

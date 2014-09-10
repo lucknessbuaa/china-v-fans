@@ -864,7 +864,8 @@ var TabView = Backbone.View.extend({
 
     activate: function(tab) {
         Backbone.history.navigate(tab, {
-            replace: true
+            replace: true,
+            trigger: true
         });
 
         var activeTab = this.getActiveTab();
@@ -923,17 +924,6 @@ var FansRouter = Backbone.Router.extend({
         tabView.activate(tab);
     },
 
-    ensureShareContent: function() {
-        window.onwechatshare = function() {
-            return {
-                link: "http://wx.jdb.cn/",
-                desc: "夏天有三宝，V罐、好声音、加多宝",
-                title: "正宗凉茶的无限可能",
-                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
-            }
-        }
-    },
-
     popupImageView: function() {
         this.imageView.fadeOut(_.bind(function() {
             this.imageView.destroy();
@@ -952,7 +942,14 @@ var FansRouter = Backbone.Router.extend({
         }
 
         this.ensureTab('photo');
-        this.ensureShareContent();
+        window.onwechatshare = function() {
+            return {
+                link: "http://wx.jdb.cn/fans/photo/",
+                desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
+                title: "加多宝中国好声音正宗V海报",
+                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        };
 
         if (!photoListView) {
             photoListView = new PhotoListView();
@@ -978,15 +975,32 @@ var FansRouter = Backbone.Router.extend({
 
     video: function(id) {
         this.ensureTab('video');
-        this.ensureSizeContent();
+
+        window.onwechatshare = function() {
+            return {
+                link: "http://wx.jdb.cn/fans/video/",
+                desc: "分享一个中国好声音视频给你,带你看好声音台前幕后!",
+                title: "加多宝中国好声音正宗V视频",
+                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        };
     },
 
     news: function() {
         if (this.newsDetail) {
             this.newsExit();
         }
+
         this.ensureTab('news');
-        this.ensureSizeContent();
+
+        window.onwechatshare = function() {
+            return {
+                link: "http://wx.jdb.cn/fans/news/",
+                desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
+                title: "加多宝中国好声音正宗V资讯",
+                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        };
     },
 
     newsExit: function() {

@@ -136,7 +136,7 @@ var ImageView = Backbone.View.extend({
         var self = this;
         window.onwechatshare = _.bind(function() {
             return {
-                link: "http://wx.jdb.cn/fans/photo/" + (this.imageId || ""),
+                link: "http://wx.jdb.cn/fans/photo" + (this.imageId ? "/" + this.imageId : ""),
                 desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
                 title: "加多宝中国好声音正宗V海报",
                 img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
@@ -944,7 +944,7 @@ var FansRouter = Backbone.Router.extend({
         this.ensureTab('photo');
         window.onwechatshare = function() {
             return {
-                link: "http://wx.jdb.cn/fans/photo/",
+                link: "http://wx.jdb.cn/fans/photo",
                 desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
                 title: "加多宝中国好声音正宗V海报",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
@@ -978,7 +978,7 @@ var FansRouter = Backbone.Router.extend({
 
         window.onwechatshare = function() {
             return {
-                link: "http://wx.jdb.cn/fans/video/",
+                link: "http://wx.jdb.cn/fans/video",
                 desc: "分享一个中国好声音视频给你,带你看好声音台前幕后!",
                 title: "加多宝中国好声音正宗V视频",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
@@ -995,7 +995,7 @@ var FansRouter = Backbone.Router.extend({
 
         window.onwechatshare = function() {
             return {
-                link: "http://wx.jdb.cn/fans/news/",
+                link: "http://wx.jdb.cn/fans/news",
                 desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
                 title: "加多宝中国好声音正宗V资讯",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'

@@ -10,6 +10,7 @@ Backbone.$ = $;
 require("velocity");
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
+var alertify = require("alertify");
 require('./components/wechat-share/index');
 
 var CONTENT_ID = 1;
@@ -188,6 +189,11 @@ var ImageView = Backbone.View.extend({
             this.$shareHide.removeClass('share-hide');
             this.$el.find('.toolbar').addClass('share-hide');
             this.$shareImg.velocity("fadeIn")
+        }, this));
+
+        this.$download.click(_.bind(function(e) {
+            e.preventDefault();
+            alertify.log('长按图片，即可保存至手机');
         }, this));
 
         this.$heart.click(_.bind(function() {

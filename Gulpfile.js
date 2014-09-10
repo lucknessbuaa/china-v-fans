@@ -57,6 +57,7 @@ gulp.task('scripts', ['browserify'], function() {
     return gulp.src([
             './public/components/jquery/dist/jquery.js',
             './public/components/velocity/jquery.velocity.js',
+            './public/components/alertify.js/lib/alertify.js',
             './public/build/index.js'
         ]).pipe(concat('index.js'))
         // .pipe(uglify({

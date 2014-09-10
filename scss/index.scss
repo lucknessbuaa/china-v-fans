@@ -1,4 +1,10 @@
 @import "public/components/bootstrap-sass-official/assets/stylesheets/bootstrap.scss";
+@import "public/components/alertify.js/themes/alertify.core.css";
+@import "public/components/alertify.js/themes/alertify.default.css";
+
+.alertify-log {
+    opacity: 0.7;
+}
 
 $bg: #ECC013;
 

@@ -45,6 +45,7 @@
   },
   "browserify-shim": {
     "jquery": "global:$",
-    "velocity": "global:Velocity"
+    "velocity": "global:Velocity",
+    "alertify": "global:alertify"
   }
 }

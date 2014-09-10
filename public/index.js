@@ -99,25 +99,25 @@ var NewsDetail = Backbone.View.extend({
         }, this));
     },
 
-    setNews: function(id){
+    setNews: function(id) {
         getNews(id).then(_.bind(function(data) {
             this.$wrapper.html("");
             this.image = new Image();
             this.image.src = data.image;
             this.$image = $(this.image);
 
-            this.$image.load(_.bind(function(){
+            this.$image.load(_.bind(function() {
                 this.onImageLoad();
             }, this));
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
-        }, this)).always(_.bind(function(){
+        }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
     },
 
-    onImageLoad: function(){
+    onImageLoad: function() {
         var size = sizing.cover(this.width, this.height,
             this.$image[0].naturalWidth, this.$image[0].naturalHeight);
         this.$image.css('width', size.width + 'px');
@@ -133,6 +133,16 @@ var NewsDetail = Backbone.View.extend({
 
 var ImageView = Backbone.View.extend({
     initialize: function(options) {
+        var self = this;
+        window.onwechatshare = _.bind(function() {
+            return {
+                link: "http://wx.jdb.cn/fans/photo/" + (this.imageId || ""),
+                desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
+                title: "加多宝中国好声音正宗V海报",
+                img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        }, this);
+
         var tpl = _.template(multiline(function() {
             /*@preserve
             <div class='photo-view' id='wechat-share'>
@@ -246,7 +256,7 @@ var ImageView = Backbone.View.extend({
             this.$image.load(_.bind(function() {
                 this.onImageLoad();
             }, this));
-        }, this)).always(_.bind(function(){
+        }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
     },
@@ -337,7 +347,7 @@ var VideoItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
-        this.$image.error(_.bind(function(){
+        this.$image.error(_.bind(function() {
             this.spinner.stop();
         }, this));
     },
@@ -400,7 +410,7 @@ var VideoListView = BaseView.extend({
                 _.each(data.objects, _.bind(function(video) {
                     var item = new VideoItem(video);
 
-                    postLog(video.id, uid());  
+                    postLog(video.id, uid());
                     this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
@@ -454,7 +464,7 @@ var NewsItem = Backbone.View.extend({
         this.$con = this.$el.find('.con');
         this.$detail = this.$el.find('.detail');
 
-        this.$detail.click(_.bind(function(){
+        this.$detail.click(_.bind(function() {
             postLog(options.id, uid());
             Backbone.history.navigate("/news/" + options.id, {
                 trigger: true
@@ -472,7 +482,7 @@ var NewsItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
-        this.$image.error(_.bind(function(){
+        this.$image.error(_.bind(function() {
             this.spinner.stop();
         }, this));
     },
@@ -523,9 +533,9 @@ var NewsView = BaseView.extend({
                 lines: 12
             });
             this.spinner.spin(this.$el[0]);
-            
+
             getNewsList(0, 10000).then(_.bind(function(data) {
-                if(data.objects.length === 0){
+                if (data.objects.length === 0) {
                     return this.$el.addClass('empty');
                 }
 
@@ -539,11 +549,11 @@ var NewsView = BaseView.extend({
             }, this), _.bind(function() {
                 this.$el.children('p.tip').html('网络异常');
                 this.$el.addClass('empty');
-            }, this)).always(_.bind(function(){
+            }, this)).always(_.bind(function() {
                 this.spinner.stop();
             }, this));
 
-        } else if(this.itemlist.length !== 0){
+        } else if (this.itemlist.length !== 0) {
             this.getLoad();
         }
         this.$el.show();
@@ -585,7 +595,7 @@ var StudentItem = Backbone.View.extend({
         this.$con = this.$el.find('.con');
         this.$detail = this.$el.find('.detail');
 
-        this.$detail.click(_.bind(function(){
+        this.$detail.click(_.bind(function() {
             Backbone.history.navigate("/news/" + options.id, {
                 trigger: true
             });
@@ -602,7 +612,7 @@ var StudentItem = Backbone.View.extend({
             this.ensureSize();
             this.spinner.stop();
         }, this));
-        this.$image.error(_.bind(function(){
+        this.$image.error(_.bind(function() {
             this.spinner.stop();
         }, this));
     },
@@ -698,9 +708,9 @@ var StudentPage = BaseView.extend({
                 lines: 12
             });
             this.spinner.spin(this.$el[0]);
-            
+
             getNewsList(0, 10000).then(_.bind(function(data) {
-                if(data.objects.length === 0){
+                if (data.objects.length === 0) {
                     return this.$el.addClass('empty');
                 }
 
@@ -714,11 +724,11 @@ var StudentPage = BaseView.extend({
             }, this), _.bind(function() {
                 this.$el.children('p.tip').html('网络异常');
                 this.$el.addClass('empty');
-            }, this)).always(_.bind(function(){
+            }, this)).always(_.bind(function() {
                 this.spinner.stop();
             }, this));
 
-        } else if(this.itemlist.length !== 0){
+        } else if (this.itemlist.length !== 0) {
             this.getLoad();
         }
 
@@ -729,9 +739,9 @@ var StudentPage = BaseView.extend({
                 lines: 12
             });
             this.spinner.spin(this.$el[0]);
-            
+
             getPictureList(0, 10000).then(_.bind(function(data) {
-                if(data.objects.length === 0){
+                if (data.objects.length === 0) {
                     return this.$el.addClass('empty');
                 }
 
@@ -745,11 +755,11 @@ var StudentPage = BaseView.extend({
             }, this), _.bind(function() {
                 this.$el.children('p.tip').html('网络异常');
                 this.$el.addClass('empty');
-            }, this)).always(_.bind(function(){
+            }, this)).always(_.bind(function() {
                 this.spinner.stop();
             }, this));
 
-        } else if(this.picturelist.length !== 0){
+        } else if (this.picturelist.length !== 0) {
             this.getPictureLoad();
         }
         this.$el.show();
@@ -792,17 +802,17 @@ var PhotoListView = BaseView.extend({
             this.spinner.spin(this.$el[0]);
         }
         getPhotoList(0, 20).then(_.bind(function(data) {
-            if(data.objects.length === 0){
+            if (data.objects.length === 0) {
                 return this.$el.addClass('empty');
             }
 
             this.$el.removeClass('empty');
             this.photoList = data.objects;
             this.render();
-        }, this), _.bind(function(){
+        }, this), _.bind(function() {
             this.$el.children('p.tip').html('网络异常');
             this.$el.addClass('empty');
-        }, this)).always(_.bind(function(){
+        }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
     },
@@ -913,6 +923,17 @@ var FansRouter = Backbone.Router.extend({
         tabView.activate(tab);
     },
 
+    ensureShareContent: function() {
+        window.onwechatshare = function() {
+            return {
+                link: "http://wx.jdb.cn/",
+                desc: "夏天有三宝，V罐、好声音、加多宝",
+                title: "正宗凉茶的无限可能",
+                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        }
+    },
+
     popupImageView: function() {
         this.imageView.fadeOut(_.bind(function() {
             this.imageView.destroy();
@@ -931,6 +952,7 @@ var FansRouter = Backbone.Router.extend({
         }
 
         this.ensureTab('photo');
+        this.ensureShareContent();
 
         if (!photoListView) {
             photoListView = new PhotoListView();
@@ -956,16 +978,18 @@ var FansRouter = Backbone.Router.extend({
 
     video: function(id) {
         this.ensureTab('video');
+        this.ensureSizeContent();
     },
 
     news: function() {
-        if(this.newsDetail){
+        if (this.newsDetail) {
             this.newsExit();
         }
         this.ensureTab('news');
+        this.ensureSizeContent();
     },
 
-    newsExit: function(){
+    newsExit: function() {
         this.newsDetail.destroy();
         this.newsDetail = null;
 
@@ -976,7 +1000,7 @@ var FansRouter = Backbone.Router.extend({
     },
 
     newsDetails: function(id) {
-        if(!this.newsDetail){
+        if (!this.newsDetail) {
             this.newsDetail = new NewsDetail();
             this.newsDetail.$el.appendTo($(".content"));
         }
@@ -985,8 +1009,8 @@ var FansRouter = Backbone.Router.extend({
         this.newsDetail.on('exit', _.bind(this.newsExit, this));
     },
 
-    students: function(){
-        if(!this.studentPage){
+    students: function() {
+        if (!this.studentPage) {
             this.studentPage = new StudentPage();
             this.studentPage.$el.appendTo($(".content"));
         }

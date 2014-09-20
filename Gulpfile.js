@@ -52,6 +52,24 @@ gulp.task('browserify', function() {
             });
         });
 });
+gulp.task('browserifyNews', function() {
+    var bundle = browserify('./public/news.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
+    return stream.on('error', onError(function(err) {
+            stream.end();
+        }))
+        .pipe(source('news.js'))
+        .pipe(gulp.dest('./public/build'))
+        .on('end', function() {
+            notify({
+                'title': 'browserify',
+                'subtitle': 'finish compiling scripts'
+            });
+        });
+});
 
 gulp.task('scripts', ['browserify'], function() {
     return gulp.src([
@@ -60,6 +78,147 @@ gulp.task('scripts', ['browserify'], function() {
             './public/components/alertify.js/lib/alertify.js',
             './public/build/index.js'
         ]).pipe(concat('index.js'))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
+        .pipe(gulp.dest('public/build'));
+});
+
+gulp.task('news', ['browserifyNews'], function() {
+    return gulp.src([
+            './public/components/jquery/dist/jquery.js',
+            './public/components/velocity/jquery.velocity.js',
+            './public/components/alertify.js/lib/alertify.js',
+            './public/build/news.js'
+        ]).pipe(concat('news.js'))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
+        .pipe(gulp.dest('public/build'));
+});
+
+gulp.task('browserifyWelfare', function() {
+    var bundle = browserify('./public/welfare.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
+    return stream.on('error', onError(function(err) {
+            stream.end();
+        }))
+        .pipe(source('welfare.js'))
+        .pipe(gulp.dest('./public/build'))
+        .on('end', function() {
+            notify({
+                'title': 'browserify',
+                'subtitle': 'finish compiling scripts'
+            });
+        });
+});
+
+gulp.task('welfare', ['browserifyWelfare'], function() {
+    return gulp.src([
+            './public/components/jquery/dist/jquery.js',
+            './public/components/velocity/jquery.velocity.js',
+            './public/components/alertify.js/lib/alertify.js',
+            './public/build/welfare.js'
+        ]).pipe(concat('welfare.js'))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
+        .pipe(gulp.dest('public/build'));
+});
+
+gulp.task('browserifyPrize', function() {
+    var bundle = browserify('./public/prize.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
+    return stream.on('error', onError(function(err) {
+            stream.end();
+        }))
+        .pipe(source('prize.js'))
+        .pipe(gulp.dest('./public/build'))
+        .on('end', function() {
+            notify({
+                'title': 'browserify',
+                'subtitle': 'finish compiling scripts'
+            });
+        });
+});
+
+gulp.task('prize', ['browserifyPrize'], function() {
+    return gulp.src([
+            './public/components/jquery/dist/jquery.js',
+            './public/components/velocity/jquery.velocity.js',
+            './public/components/alertify.js/lib/alertify.js',
+            './public/build/prize.js'
+        ]).pipe(concat('prize.js'))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
+        .pipe(gulp.dest('public/build'));
+});
+
+gulp.task('browserifyFavor', function() {
+    var bundle = browserify('./public/favor.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
+    return stream.on('error', onError(function(err) {
+            stream.end();
+        }))
+        .pipe(source('favor.js'))
+        .pipe(gulp.dest('./public/build'))
+        .on('end', function() {
+            notify({
+                'title': 'browserify',
+                'subtitle': 'finish compiling scripts'
+            });
+        });
+});
+
+gulp.task('favor', ['browserifyFavor'], function() {
+    return gulp.src([
+            './public/components/jquery/dist/jquery.js',
+            './public/components/velocity/jquery.velocity.js',
+            './public/components/alertify.js/lib/alertify.js',
+            './public/build/favor.js'
+        ]).pipe(concat('favor.js'))
+        // .pipe(uglify({
+        //     preserveComments: 'some'
+        // }))
+        .pipe(gulp.dest('public/build'));
+});
+
+gulp.task('browserifyStudent', function() {
+    var bundle = browserify('./public/student.js')
+        .transform(stringify(['.html']))
+        .transform('browserify-shim');
+
+    var stream = bundle.bundle();
+    return stream.on('error', onError(function(err) {
+            stream.end();
+        }))
+        .pipe(source('student.js'))
+        .pipe(gulp.dest('./public/build'))
+        .on('end', function() {
+            notify({
+                'title': 'browserify',
+                'subtitle': 'finish compiling scripts'
+            });
+        });
+});
+
+gulp.task('student', ['browserifyStudent'], function() {
+    return gulp.src([
+            './public/components/jquery/dist/jquery.js',
+            './public/components/velocity/jquery.velocity.js',
+            './public/components/alertify.js/lib/alertify.js',
+            './public/build/student.js'
+        ]).pipe(concat('student.js'))
         // .pipe(uglify({
         //     preserveComments: 'some'
         // }))
@@ -96,7 +255,7 @@ gulp.task('image-other', function() {
 });
 
 gulp.task("watch-scripts", function() {
-    gulp.watch(["public/index.js", "package.json"], ["scripts"]);
+    gulp.watch(["public/*.js", "package.json"], ["scripts"]);
 });
 
 gulp.task("watch-images", function() {

@@ -1,0 +1,70 @@
+listening on port 9758
+[0mGET /example/ [33m404 [0m13.721 ms - 21[0m
+[0mGET /fans/example [33m404 [0m5.389 ms - 25[0m
+[0mGET /fans/ [36m302 [0m6.137 ms - 66[0m
+[0mGET /fans/photo [32m200 [0m239.626 ms - 862[0m
+[0mGET /fans/css/index.css [32m200 [0m16.384 ms - 243351[0m
+[0mGET /fans/components/wechat-share/browser.js [32m200 [0m1.977 ms - 2655[0m
+[0mGET /fans/build/index.js [32m200 [0m10.768 ms - 599787[0m
+[0mGET /contents/API/output/image/?format=json&content=1 [32m200 [0m150.012 ms - -[0m
+[0mGET / [36m302 [0m1.201 ms - 39[0m
+[0mGET /fans [36m303 [0m0.867 ms - -[0m
+[0mGET /example [33m404 [0m0.568 ms - 20[0m
+[0mGET / [36m302 [0m0.552 ms - 39[0m
+[0mGET /fans [36m303 [0m1.860 ms - -[0m
+[0mGET /fans/ [36m302 [0m1.056 ms - 66[0m
+[0mGET /fans/photo [32m200 [0m68.945 ms - 862[0m
+[0mGET /fans/css/index.css [32m200 [0m5.078 ms - 243351[0m
+[0mGET /fans/components/wechat-share/browser.js [32m200 [0m0.880 ms - 2655[0m
+[0mGET /fans/build/index.js [32m200 [0m14.847 ms - 599787[0m
+[0mGET /example [33m404 [0m0.793 ms - 20[0m
+[0mGET /contents/API/output/image/?format=json&content=1 [32m200 [0m86.901 ms - -[0m
+[0mGET /fans/fonts/bootstrap/glyphicons-halflings-regular.ttf [32m200 [0m24.889 ms - 41280[0m
+[0mGET /fans/img/arrow.png [32m200 [0m20.806 ms - 14383[0m
+[0mGET /contents/API/output/image/1/?format=json&content= [32m200 [0m126.445 ms - -[0m
+[0mPOST /contents/API/logs [32m200 [0m130.236 ms - -[0m
+[0mGET /fans/ [36m302 [0m0.800 ms - 66[0m
+[0mGET /fans/photo [32m200 [0m48.337 ms - 862[0m
+[0mGET /fans/css/index.css [32m200 [0m4.956 ms - 243351[0m
+[0mGET /fans/components/wechat-share/browser.js [32m200 [0m2.250 ms - 2655[0m
+[0mGET /fans/build/index.js [32m200 [0m18.747 ms - 599787[0m
+[0mGET /contents/API/output/image/?format=json&content=1 [32m200 [0m3135.368 ms - -[0m
+[0mGET /fans/fonts/bootstrap/glyphicons-halflings-regular.ttf [32m200 [0m1.935 ms - 41280[0m
+[0mGET /contents/API/output/video/?format=json&content=1 [32m200 [0m561.515 ms - -[0m
+[0mPOST /contents/API/logs [32m200 [0m103.446 ms - -[0m
+[0mGET /contents/API/output/article/?format=json&content=1 [32m200 [0m79.382 ms - -[0m
+[0mGET /fans/img/arrow.png [32m200 [0m4.114 ms - 14383[0m
+[0mPOST /contents/API/logs [32m200 [0m112.680 ms - -[0m
+[0mGET /contents/API/output/image/1/?format=json&content= [32m200 [0m332.710 ms - -[0m
+[0mGET /fans [36m303 [0m0.713 ms - -[0m
+[0mGET /fans/ [36m302 [0m0.960 ms - 66[0m
+[0mGET /fans/photo [32m200 [0m83.379 ms - 862[0m
+[0mGET /fans/css/index.css [32m200 [0m9.124 ms - 243351[0m
+[0mGET /fans/components/wechat-share/browser.js [32m200 [0m5.837 ms - 2655[0m
+[0mGET /fans/build/index.js [32m200 [0m10.302 ms - 599787[0m
+[0mGET /contents/API/output/image/?format=json&content=1 [32m200 [0m235.033 ms - -[0m
+[0mGET /fans/fonts/bootstrap/glyphicons-halflings-regular.ttf [32m200 [0m1.680 ms - 41280[0m
+[0mGET /fans/photo [32m200 [0m51.371 ms - 862[0m
+[0mGET /fans/photo [32m200 [0m142.724 ms - 862[0m
+[0mGET /fans/components/wechat-share/browser.js [32m200 [0m1.617 ms - 2655[0m
+[0mGET /fans/build/index.js [32m200 [0m8.349 ms - 599787[0m
+[0mGET /fans/photo [32m200 [0m34.104 ms - 862[0m
+[0mGET /fans/css/index.css [32m200 [0m3.814 ms - 243374[0m
+[0mGET /fans/components/wechat-share/browser.js [32m200 [0m0.831 ms - 2655[0m
+[0mGET /fans/build/index.js [32m200 [0m14.365 ms - 619676[0m
+[0mGET /contents/API/output/image/?format=json&content=1 [32m200 [0m84.203 ms - -[0m
+[0mGET /news/list [33m404 [0m0.537 ms - 22[0m
+[0mGET /news/list/ [33m404 [0m0.448 ms - 23[0m
+[0mGET /news/list [33m404 [0m0.358 ms - 22[0m
+[09:36:19] Using gulpfile ~/fans/Gulpfile.js
+
+/home/liushuangshuang/fans/node_modules/gulp/node_modules/orchestrator/index.js:89
+					throw new Error('pass strings or arrays of strings');
+					      ^
+Error: pass strings or arrays of strings
+    at Gulp.Orchestrator.start (/home/liushuangshuang/fans/node_modules/gulp/node_modules/orchestrator/index.js:89:12)
+    at /usr/local/lib/node_modules/gulp/bin/gulp.js:121:20
+    at process._tickCallback (node.js:415:13)
+    at Function.Module.runMain (module.js:499:11)
+    at startup (node.js:119:16)
+    at node.js:902:3

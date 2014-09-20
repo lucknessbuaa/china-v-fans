@@ -11,7 +11,7 @@ require("velocity");
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = require("alertify");
-require('./components/wechat-share/index');
+//require('./components/wechat-share/index');
 
 var CONTENT_ID = 1;
 
@@ -27,9 +27,9 @@ function getNewsList(offset, limit) {
     return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
-function getPictureList(offset, limit) {
-    return $.get("/contents/API/output/bigpicture/?format=json");
-}
+//function getPictureList(offset, limit) {
+//    return $.get("/contents/API/output/bigpicture/?format=json");
+//}
 
 function getPhoto(id) {
     return $.get("/contents/API/output/image/" + id + "/?format=json&content=");
@@ -98,6 +98,7 @@ var NewsDetail = Backbone.View.extend({
         this.$el.click(_.bind(function() {
             this.trigger('exit');
         }, this));
+
     },
 
     setNews: function(id) {
@@ -113,6 +114,13 @@ var NewsDetail = Backbone.View.extend({
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
+            wechatshare(_.bind(function() {
+                return {
+                    title: data.name || ' ',
+                    desc: this.$content[0].innerText || ' ',
+                    img_url: data.image || 'http://wx.jdb.cn/static/img/share.jpg'
+                }
+            }, this));
         }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
@@ -135,14 +143,14 @@ var NewsDetail = Backbone.View.extend({
 var ImageView = Backbone.View.extend({
     initialize: function(options) {
         var self = this;
-        window.onwechatshare = _.bind(function() {
+        wechatshare(_.bind(function() {
             return {
-                link: "http://wx.jdb.cn/fans/photo" + (this.imageId ? "/" + this.imageId : ""),
+                link: window.location.host + "/fans/photo" + (this.imageId ? "/" + this.imageId : ""),
                 desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
                 title: "加多宝中国好声音正宗V海报",
                 img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        }, this);
+        }, this));
 
         var tpl = _.template(multiline(function() {
             /*@preserve
@@ -572,218 +580,6 @@ var NewsView = BaseView.extend({
     }
 });
 
-var StudentItem = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <li class='news-item'>
-                <div class='title'><%= name %></div>
-                <div class='date'>2014-08-09</div>
-                <div class='cover-wrapper'>
-                    <div class='cover'>
-                        <img class='image' style='display: none' src='<%= image %>'>
-                    </div>
-                </div>
-                <div class='con hi'>
-                    <div class='content-wrapper'>
-                        <%=contents %>
-                    </div>
-                </div>
-                <div class='detail'><span>详情</span></div>
-            </li>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-
-        this.$wrapper = this.$el.find('.cover');
-        this.$image = this.$el.find('img.image');
-        this.$con = this.$el.find('.con');
-        this.$detail = this.$el.find('.detail');
-
-        this.$detail.click(_.bind(function() {
-            Backbone.history.navigate("/news/" + options.id, {
-                trigger: true
-            });
-        }, this));
-        this.width = window.innerWidth;
-        this.height = 160;
-        this.resize = false;
-        this.spinner = new Spinner({
-            color: '#fff',
-            lines: 12
-        });
-        this.spinner.spin(this.$wrapper[0]);
-        this.$image.load(_.bind(function() {
-            this.ensureSize();
-            this.spinner.stop();
-        }, this));
-        this.$image.error(_.bind(function() {
-            this.spinner.stop();
-        }, this));
-    },
-
-    ensureSize: function() {
-        if (this.$image[0].naturalWidth == 0 || this.resize) {
-            return;
-        }
-        this.resize = true;
-        var size = sizing.cover(this.width, this.height,
-            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
-        this.$image.css('width', size.width + 'px');
-        this.$image.css('margin-left', (-size.width / 2) + 'px')
-        this.$image.css('left', '50%');
-        this.$image.show();
-
-    },
-
-    loadAgain: function() {
-        if (this.$image[0].naturalWidth == 0) {
-            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
-        } else {
-            this.ensureSize();
-        }
-    }
-});
-
-var BigPicture = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <li class='news-item'>
-                <a href="#" class="picture-link">
-                    <img src="<%= image %>">
-                </a>
-            </li>
-            */
-        });
-
-        this.setElement($(tpl(options).trim()));
-    },
-
-    ensureSize: function() {
-        if (this.$image[0].naturalWidth == 0 || this.resize) {
-            return;
-        }
-        this.resize = true;
-        var size = sizing.cover(this.width, this.height,
-            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
-        this.$image.css('width', size.width + 'px');
-        this.$image.css('margin-left', (-size.width / 2) + 'px')
-        this.$image.css('left', '50%');
-        this.$image.show();
-
-    },
-
-    loadAgain: function() {
-        if (this.$image[0].naturalWidth == 0) {
-            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
-        } else {
-            this.ensureSize();
-        }
-    }
-});
-
-var StudentPage = BaseView.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <div class='student-page'>
-                <div class='big-picture scroll-banner'>
-				    <p class='tip'>暂无图片</p>
-                    <ul class="box picture-list list-unstyled">
-                </div>
-                <div class='article-list-wrapper'>
-				    <p class='tip'>暂无资讯</p>
-                    <ul class='article-list list-unstyled'>     
-                </div>
-            <div>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-        this.$list = this.$el.find('.article-list');
-        this.$pictureList = this.$el.find('.picture-list');
-    },
-
-    show: function() {
-        if (!this.itemlist) {
-            this.itemlist = [];
-            this.spinner = new Spinner({
-                color: '#fff',
-                lines: 12
-            });
-            this.spinner.spin(this.$el[0]);
-
-            getNewsList(0, 10000).then(_.bind(function(data) {
-                if (data.objects.length === 0) {
-                    return this.$el.addClass('empty');
-                }
-
-                this.$el.removeClass('empty');
-                _.each(data.objects, _.bind(function(article) {
-                    var item = new StudentItem(article);
-                    this.itemlist.push(item);
-                    item.$el.appendTo(this.$list);
-                }, this));
-                this.spinner.stop();
-            }, this), _.bind(function() {
-                this.$el.children('p.tip').html('网络异常');
-                this.$el.addClass('empty');
-            }, this)).always(_.bind(function() {
-                this.spinner.stop();
-            }, this));
-
-        } else if (this.itemlist.length !== 0) {
-            this.getLoad();
-        }
-
-        if (!this.picturelist) {
-            this.picturelist = [];
-            this.spinner = new Spinner({
-                color: '#fff',
-                lines: 12
-            });
-            this.spinner.spin(this.$el[0]);
-
-            getPictureList(0, 10000).then(_.bind(function(data) {
-                if (data.objects.length === 0) {
-                    return this.$el.addClass('empty');
-                }
-
-                this.$el.removeClass('empty');
-                _.each(data.objects, _.bind(function(article) {
-                    var item = new BigPicture(article);
-                    this.picturelist.push(item);
-                    item.$el.appendTo(this.$pictureList);
-                }, this));
-                this.spinner.stop();
-            }, this), _.bind(function() {
-                this.$el.children('p.tip').html('网络异常');
-                this.$el.addClass('empty');
-            }, this)).always(_.bind(function() {
-                this.spinner.stop();
-            }, this));
-
-        } else if (this.picturelist.length !== 0) {
-            this.getPictureLoad();
-        }
-        this.$el.show();
-    },
-
-    getPictureLoad: function() {
-        for (var i = 0; i < this.picturelist.length; i++) {
-            this.picturelist[i].loadAgain();
-        }
-    },
-
-    getLoad: function() {
-        for (var i = 0; i < this.itemlist.length; i++) {
-            this.itemlist[i].loadAgain();
-        }
-    }
-});
-
 var PhotoListView = BaseView.extend({
     initialize: function(options) {
         var tpl = _.template(multiline(function() {
@@ -904,7 +700,6 @@ var FansRouter = Backbone.Router.extend({
         "video": "video",
         "news": "news",
         "news/:id": "newsDetails",
-        "student": "students",
     },
 
     ensureTab: function(tab) {
@@ -948,14 +743,14 @@ var FansRouter = Backbone.Router.extend({
         }
 
         this.ensureTab('photo');
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function() {
             return {
-                link: "http://wx.jdb.cn/fans/photo",
+                link: window.location.host + "/fans/photo",
                 desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
                 title: "加多宝中国好声音正宗V海报",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
+        }, this));
 
         if (!photoListView) {
             photoListView = new PhotoListView();
@@ -982,14 +777,14 @@ var FansRouter = Backbone.Router.extend({
     video: function(id) {
         this.ensureTab('video');
 
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function(){
             return {
-                link: "http://wx.jdb.cn/fans/video",
+                link: window.location.host + "/fans/video",
                 desc: "分享一个中国好声音视频给你,带你看好声音台前幕后!",
                 title: "加多宝中国好声音正宗V视频",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
+        }, this));
     },
 
     news: function() {
@@ -999,14 +794,14 @@ var FansRouter = Backbone.Router.extend({
 
         this.ensureTab('news');
 
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function(){
             return {
-                link: "http://wx.jdb.cn/fans/news",
+                link: window.location.host + "/fans/news",
                 desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
                 title: "加多宝中国好声音正宗V资讯",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
+        }, this));
     },
 
     newsExit: function() {
@@ -1028,23 +823,16 @@ var FansRouter = Backbone.Router.extend({
         this.newsDetail.setNews(id);
         this.newsDetail.on('exit', _.bind(this.newsExit, this));
     },
-
-    students: function() {
-        if (!this.studentPage) {
-            this.studentPage = new StudentPage();
-            this.studentPage.$el.appendTo($(".content"));
-        }
-
-        this.studentPage.show();
-    }
 });
 
 $(function() {
     $content = $(".content");
 
     new FansRouter();
-    Backbone.history.start({
-        root: "/fans/",
-        pushState: true
-    });
+    if(!Backbone.history.start({
+        root: "/fans/"
+        //pushState: false
+    })) {
+        Backbone.history.navigate('photo', {trigger: true});
+    }
 });

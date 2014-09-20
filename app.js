@@ -26,10 +26,17 @@ app.engine('jade', require('jade').__express);
 var fansRouter = express.Router();
 
 fansRouter.get('/', function(req, res) {
-    return res.redirect('photo');
+    return res.render('index.jade');
 });
 
-fansRouter.get('/photo/:id?', function(req, res) {
+fansRouter.get('/:resource/:id?', function(req, res) {
+    resource = req.params.resource;
+    id = req.params.id;
+    
+    return id ? res.redirect('/fans/#' + resource + '/' + id) : res.redirect('/fans/#' + resource);
+});
+
+/*fansRouter.get('/photo/:id?', function(req, res) {
     return res.render('index.jade');
 });
 
@@ -38,16 +45,88 @@ fansRouter.get('/video', function(req, res) {
 });
 
 fansRouter.get('/news', function(req, res) {
-    return res.render('index.jade');
+    return res.redirect('/#news');
 });
 
 fansRouter.get('/news/:id?', function(req, res) {
-    return res.render('index.jade');
+    id = req.params.id;
+    return res.redirect('/#news/' + id);
+});
+*/
+
+//news center
+app.use("/news/", express.static(__dirname + "/public"));
+app.engine('jade', require('jade').__express);
+
+var newsRouter = express.Router();
+
+newsRouter.get('/', function(req, res) {
+    return res.render('news.jade');
 });
 
-//fansRouter.get('/student', function(req, res) {
-//    return res.render('index.jade');
-//});
+newsRouter.get('/:id?', function(req, res) {
+    return res.render('news.jade');
+});
+
+//welfare center
+app.use("/welfare/", express.static(__dirname + "/public"));
+app.engine('jade', require('jade').__express);
+
+var welfareRouter = express.Router();
+
+welfareRouter.get('/', function(req, res) {
+    return res.render('welfare.jade');
+});
+
+welfareRouter.get('/:id?', function(req, res) {
+    return res.render('welfare.jade');
+});
+
+//favor center
+app.use("/favor/", express.static(__dirname + "/public"));
+app.engine('jade', require('jade').__express);
+
+var favorRouter = express.Router();
+
+favorRouter.get('/', function(req, res) {
+    return res.render('favor.jade');
+});
+
+favorRouter.get('/:id?', function(req, res) {
+    return res.render('favor.jade');
+});
+
+//prize center
+app.use("/prize/", express.static(__dirname + "/public"));
+app.engine('jade', require('jade').__express);
+
+var prizeRouter = express.Router();
+
+prizeRouter.get('/', function(req, res) {
+    return res.render('prize.jade');
+});
+
+prizeRouter.get('/:id?', function(req, res) {
+    return res.render('prize.jade');
+});
+
+//student center
+app.use("/student/", express.static(__dirname + "/public"));
+app.engine('jade', require('jade').__express);
+
+var studentRouter = express.Router();
+
+studentRouter.get('/', function(req, res) {
+    return res.render('student.jade');
+});
+
+studentRouter.get('/bigpicture/:id?', function(req, res) {
+    return res.render('student.jade');
+});
+
+studentRouter.get('/news/:id?', function(req, res) {
+    return res.render('student.jade');
+});
 
 // proxy /contents/API/...
 var apiRouter = express.Router();
@@ -71,6 +150,11 @@ apiRouter.post(/^\/contents\/API\/.*$/, function(req, res) {
 });
 
 app.use("/fans", fansRouter);
+app.use("/news", newsRouter);
+app.use("/welfare", welfareRouter);
+app.use("/favor", favorRouter);
+app.use("/prize", prizeRouter);
+app.use("/student", studentRouter);
 app.use("/", apiRouter);
 app.get("/", function(req, res) {
     res.redirect('/fans');

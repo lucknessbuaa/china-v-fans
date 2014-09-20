@@ -13233,38 +13233,24 @@ Backbone.$ = $;
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = (typeof window !== "undefined" ? window.alertify : typeof global !== "undefined" ? global.alertify : null);
-//require('./components/wechat-share/index');
+require('./components/wechat-share/index');
 
 var CONTENT_ID = 1;
 
-function getVideoList(offset, limit) {
-    return $.get("/contents/API/output/video/?format=json&content=" + CONTENT_ID);
-}
-
-function getPhotoList(offset, limit) {
-    return $.get("/contents/API/output/image/?format=json&content=" + CONTENT_ID);
+function getNews(id) {
+    return $.get("/contents/API/output/article/" + id + "/?format=json&content=");
 }
 
 function getNewsList(offset, limit) {
     return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
-//function getPictureList(offset, limit) {
-//    return $.get("/contents/API/output/bigpicture/?format=json");
-//}
-
-function getPhoto(id) {
-    return $.get("/contents/API/output/image/" + id + "/?format=json&content=");
+function getBigPicture(id) {
+    return $.get("/contents/API/output/bigpicture/" + id + "/?format=json&content=");
 }
 
-function getNews(id) {
-    return $.get("/contents/API/output/article/" + id + "/?format=json&content=");
-}
-
-function postPhoto(id) {
-    var request = $.post("/contents/API/likes", {
-        option_id: id
-    }, 'json');
+function getBigPictureList(offset, limit) {
+    return $.get("/contents/API/output/bigpicture/?format=json");
 }
 
 function postLog(id, uid) {
@@ -13286,305 +13272,38 @@ var ViewProto = {
 
 var BaseView = Backbone.View.extend(ViewProto);
 
-var NewsDetail = Backbone.View.extend({
+var BigPicture = Backbone.View.extend({
     initialize: function(options) {
-        var tpl = _.template(multiline(function() {
+        var tpl = multpl(function() {
             /*@preserve
-            <div class='news-detail'>
-                <div class='title'></div>
-                <div class='date'></div>
+            <li class='picture-item'>
                 <div class='cover-wrapper'>
                     <div class='cover'>
-                    </div>
-                </div>
-                <div class='con hi'>
-                    <div class='content-wrapper'>
-                    </div>
-                </div>
-            </div>
-            */
-        }).trim());
-        this.setElement($(tpl(options))[0]);
-
-        this.$title = this.$el.find('.title');
-        this.$date = this.$el.find('.date');
-        this.$content = this.$el.find('.content-wrapper');
-        this.$wrapper = this.$el.find('.cover');
-        this.width = window.innerWidth;
-        this.height = 160;
-        this.spinner = new Spinner({
-            color: '#fff',
-            lines: 12
-        });
-        this.spinner.spin(this.$wrapper[0]);
-        this.$el.click(_.bind(function() {
-            this.trigger('exit');
-        }, this));
-
-    },
-
-    setNews: function(id) {
-        getNews(id).then(_.bind(function(data) {
-            this.$wrapper.html("");
-            this.image = new Image();
-            this.image.src = data.image;
-            this.$image = $(this.image);
-
-            this.$image.load(_.bind(function() {
-                this.onImageLoad();
-            }, this));
-            this.$title[0].innerHTML = data.name;
-            this.$date[0].innerHTML = "2014-08-09";
-            this.$content[0].innerHTML = data.contents;
-            wechatshare(_.bind(function() {
-                return {
-                    title: data.name || ' ',
-                    desc: this.$content[0].innerText || ' ',
-                    img_url: data.image || 'http://wx.jdb.cn/static/img/share.jpg'
-                }
-            }, this));
-        }, this)).always(_.bind(function() {
-            this.spinner.stop();
-        }, this));
-    },
-
-    onImageLoad: function() {
-        var size = sizing.cover(this.width, this.height,
-            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
-        this.$image.css('width', size.width + 'px');
-        this.$image.css('margin-left', (-size.width / 2) + 'px')
-        this.$image.css('left', '50%');
-        this.$image.appendTo(this.$wrapper);
-    },
-
-    destroy: function() {
-        this.$el.remove();
-    }
-});
-
-var ImageView = Backbone.View.extend({
-    initialize: function(options) {
-        var self = this;
-        wechatshare(_.bind(function() {
-            return {
-                link: window.location.host + "/fans/photo" + (this.imageId ? "/" + this.imageId : ""),
-                desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
-                title: "加多宝中国好声音正宗V海报",
-                img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
-            }
-        }, this));
-
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <div class='photo-view' id='wechat-share'>
-                <div class="share-hide bg">
-                    <img src="../img/arrow.png">
-                </div>
-                <div class='photo-wrapper'>
-                </div>
-                <div class='toolbar'>
-                    <div class="length"></div>
-                    <div class='share'><span class='glyphicon glyphicon-share'></span></div>
-                    <div class='heart'><span class='glyphicon glyphicon-heart'></span></div>
-                    <a class="download" href="#" target="_black"><span class='glyphicon glyphicon-download-alt'></span></a></div>
-                <div>
-            </div>
-            */
-            console.log
-        }).trim());
-
-        this.imgOptions = {};
-
-        this.setElement($(tpl(options))[0]);
-        this.$wrapper = this.$el.find('.photo-wrapper')
-
-        this.spinner = new Spinner({
-            color: '#fff',
-            lines: 12
-        });
-        this.spinner.spin(this.$wrapper[0]);
-        this.$share = this.$el.find('.share');
-        this.$heart = this.$el.find('.heart');
-        this.$download = this.$el.find('.download');
-        this.$shareHide = this.$el.find('.share-hide');
-        this.$shareImg = this.$el.find('.share-hide img');
-
-        this.$shareHide.click(_.bind(function() {
-            this.$shareImg.velocity("fadeOut")
-            this.$shareHide.addClass('share-hide');
-            this.$el.find('.toolbar').removeClass('share-hide');
-        }, this));
-
-        this.$share.click(_.bind(function() {
-            this.$shareHide.removeClass('share-hide');
-            this.$el.find('.toolbar').addClass('share-hide');
-            this.$shareImg.velocity("fadeIn")
-        }, this));
-
-        this.$download.click(_.bind(function(e) {
-            e.preventDefault();
-            alertify.log('长按图片，即可保存至手机');
-        }, this));
-
-        this.$heart.click(_.bind(function() {
-            if (!this.$heart.hasClass('up')) {
-                this.$heart.addClass('up');
-                this.markImage(this.imageId);
-                postPhoto(this.imageId);
-            } else {
-                this.unmarkImage(this.imageId);
-                this.$heart.removeClass('up');
-            }
-
-            this.$heart.velocity({
-                'font-size': 24,
-                'padding-top': 8
-            }, {
-                'duration': 200
-            });
-
-            this.$heart.velocity("reverse", {
-                'duration': 200
-            });
-        }, this));
-
-        this.$wrapper.click(_.bind(function() {
-            this.trigger('exit');
-        }, this));
-    },
-
-    isImageMarkd: function(id) {
-        return window.localStorage ? localStorage.getItem('image-' + id) === "true" : false;
-    },
-
-    markImage: function(id) {
-        if (window.localStorage) {
-            localStorage.setItem('image-' + id, true);
-        }
-    },
-
-    unmarkImage: function(id) {
-        if (window.localStorage) {
-            localStorage.setItem('image-' + id, false);
-        }
-    },
-
-    setImage: function(id) {
-        this.imageId = id;
-
-        if (this.isImageMarkd(id)) {
-            this.$heart.addClass('up');
-        }
-
-        getPhoto(id).then(_.bind(function(data) {
-            this.imageUrl = data.image;
-            this.$wrapper.html("");
-            this.image = new Image();
-            this.image.src = data.image;
-
-            this.imgOptions.imgUrl = data.image;
-            this.imgOptions.title = data.name;
-
-            this.$download.attr('href', data.image);
-
-            this.$image = $(this.image);
-
-            this.$image.load(_.bind(function() {
-                this.onImageLoad();
-            }, this));
-        }, this)).always(_.bind(function() {
-            this.spinner.stop();
-        }, this));
-    },
-
-
-
-    onImageLoad: function() {
-        var imgWidth = this.$image[0].naturalWidth;
-        var imgHeight = this.$image[0].naturalHeight;
-
-        var wrapperWidth = window.innerWidth;
-        var wrapperHeight = window.innerHeight;
-
-        console.log(imgWidth, imgHeight, wrapperWidth, wrapperHeight);
-        this.$wrapper.scrollTop(-(wrapperHeight - imgHeight) / 2);
-        if (imgWidth / imgHeight > wrapperWidth / wrapperHeight) {
-            var width = imgWidth * wrapperHeight / imgHeight;
-            this.$image.height(wrapperHeight);
-            this.$image.appendTo(this.$wrapper);
-            this.$wrapper.scrollLeft(-(wrapperWidth - width) / 2);
-        } else {
-            this.$image.width(wrapperWidth);
-            this.$image.appendTo(this.$wrapper);
-            this.$wrapper.scrollTop(0);
-        }
-    },
-
-    fadeIn: function() {
-        this.$el.velocity("fadeIn");
-    },
-
-    fadeOut: function(callback) {
-        this.$el.velocity("fadeOut", {
-            complete: callback
-        });
-    },
-
-    destroy: function() {
-        this.$el.remove();
-    }
-});
-
-var PhotoCell = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <li class='photo-item'>
-                <div class='photo-item-inner'>
-                    <div class='photo-wrapper'>
-                        <img src='<%= image %>' onError="this.src='http://placehold.it/200x360/fff&text=!'">
-                    </div>
-                    <div class='title'><%= name %></div>
-                    <div class='likes'>
-                        <span class='glyphicon glyphicon-heart'></span>&nbsp;<%= likes %>
+                        <img class="image" style='display:none' src='<%= image >'>
                     </div>
                 </div>
             </li>
             */
-            console.log
-        }).trim()); 
-        this.setElement($(tpl(options))[0]);
-        this.$el.click(_.bind(function() {
-            this.trigger('click');
-            postLog(options.id, uid());
-        }, this));
-    }
-});
+        });
 
-
-
-var VideoItem = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = _.template(require("./tpl/VideoItem.html").trim());
         this.setElement($(tpl(options).trim()));
-
+        
         this.$wrapper = this.$el.find('.cover');
         this.$image = this.$el.find('img.image');
-        this.$btn = this.$el.find('.btn-play');
-        this.spinner = new Spinner({
-            color: '#fff',
-            lines: 12
-        });
-        this.spinner.spin(this.$wrapper[0]);
+        this.width = window.innerWidth;
+        this.height = 160;
         this.resize = false;
-        this.width = window.innerWidth - 40;
-        this.height = 150;
-        this.$image.load(_.bind(function() {
+        //this.spinner = new Spinner({
+        //    color: '#fff',
+        //    lines: 12
+        //});
+        //this.spinner.spin(this.$wrapper[0]);
+        this.$image.load(_.bind(function(){
             this.ensureSize();
-            this.spinner.stop();
+          //  this.spinner.stop();
         }, this));
         this.$image.error(_.bind(function() {
-            this.spinner.stop();
+            //this.spinner.stop();
         }, this));
     },
 
@@ -13593,10 +13312,8 @@ var VideoItem = Backbone.View.extend({
             return;
         }
         this.resize = true;
-        console.log('resizing image', this.width, this.height, this.$image[0].naturalWidth, this.$image[0].naturalHeight);
         var size = sizing.cover(this.width, this.height,
             this.$image[0].naturalWidth, this.$image[0].naturalHeight);
-
         this.$image.css('width', size.width + 'px');
         this.$image.css('margin-left', (-size.width / 2) + 'px')
         this.$image.css('left', '50%');
@@ -13612,66 +13329,7 @@ var VideoItem = Backbone.View.extend({
     }
 });
 
-var VideoListView = BaseView.extend({
-    initialize: function(options) {
-        var tpl = multpl(function() {
-            /*@preserve
-            <div class='video-list-wrapper' id="load">
-				<p class='tip'>暂无视频</p>
-                <ul class='video-list list-unstyled'>
-            </div>
-            */
-            console.log
-        });
-        this.setElement($(tpl(options).trim()));
-        this.$list = this.$el.children('ul');
-    },
-
-    show: function() {
-        if (!this.itemlist) {
-            this.itemlist = [];
-
-            this.spinner = new Spinner({
-                color: '#fff',
-                lines: 12
-            });
-
-            this.spinner.spin(this.$el[0]);
-            getVideoList(0, 10000).then(_.bind(function(data) {
-                if (data.objects.length === 0) {
-                    return this.$el.addClass('empty');
-                }
-
-                this.$el.removeClass('empty');
-                _.each(data.objects, _.bind(function(video) {
-                    var item = new VideoItem(video);
-
-                    postLog(video.id, uid());
-                    this.itemlist.push(item);
-                    item.$el.appendTo(this.$list);
-                }, this));
-            }, this), _.bind(function() {
-                this.$el.children('p.tip').html('网络异常');
-                this.$el.addClass('empty');
-            }, this)).always(_.bind(function() {
-                this.spinner.stop();
-            }, this));
-        } else if (this.itemlist.length !== 0) {
-            this.getLoad();
-        }
-
-        this.$el.show();
-    },
-
-    getLoad: function() {
-        for (var i = 0; i < this.itemlist.length; i++) {
-            this.itemlist[i].loadAgain();
-        }
-    }
-});
-
-
-var NewsItem = Backbone.View.extend({
+var StudentItem = Backbone.View.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
@@ -13701,7 +13359,6 @@ var NewsItem = Backbone.View.extend({
         this.$detail = this.$el.find('.detail');
 
         this.$detail.click(_.bind(function() {
-            postLog(options.id, uid());
             Backbone.history.navigate("/news/" + options.id, {
                 trigger: true
             });
@@ -13746,53 +13403,99 @@ var NewsItem = Backbone.View.extend({
     }
 });
 
-var NewsView = BaseView.extend({
+var StudentPage = BaseView.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
-            <div class='news-list-wrapper'>
-				<p class='tip'>暂无资讯</p>
-                <ul class='news-list list-unstyled'>
-            </div>
+            <div class='student-page'>
+                <div class='big-picture scroll-banner'>
+				    <p class='tip'>暂无图片</p>
+                    <ul class="box picture-list list-unstyled">
+                </div>
+                <div class='article-list-wrapper'>
+				    <p class='tip'>暂无资讯</p>
+                    <ul class='article-list list-unstyled'>     
+                </div>
+            <div>
             */
             console.log
         });
         this.setElement($(tpl(options).trim()));
-        this.$list = this.$el.children('ul');
+        this.$list = this.$el.find('.article-list');
+        this.$imageList = this.$el.find('.picture-list');
+        this.$newsWrapper = this.$el.find('.article-list-wrapper');
+        this.$imageWrapper = this.$el.find('.article-list-wrapper');
     },
 
     show: function() {
         if (!this.itemlist) {
             this.itemlist = [];
-            this.spinner = new Spinner({
+            this.spinnerNews = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(this.$el[0]);
+            this.spinnerNews.spin(this.$newsWrapper);
 
             getNewsList(0, 10000).then(_.bind(function(data) {
                 if (data.objects.length === 0) {
-                    return this.$el.addClass('empty');
+                    return this.$newsWrapper.addClass('empty');
                 }
 
-                this.$el.removeClass('empty');
+                this.$newsWrapper.removeClass('empty');
                 _.each(data.objects, _.bind(function(article) {
-                    var item = new NewsItem(article);
+                    var item = new StudentItem(article);
                     this.itemlist.push(item);
                     item.$el.appendTo(this.$list);
                 }, this));
-                this.spinner.stop();
+                this.spinnerNews.stop();
             }, this), _.bind(function() {
-                this.$el.children('p.tip').html('网络异常');
-                this.$el.addClass('empty');
+                this.$newsWrapper.children('p.tip').html('网络异常');
+                this.$newsWrapper.addClass('empty');
             }, this)).always(_.bind(function() {
-                this.spinner.stop();
+                this.spinnerNews.stop();
             }, this));
 
         } else if (this.itemlist.length !== 0) {
             this.getLoad();
         }
+
+        if (!this.picturelist) {
+            this.picturelist = [];
+            this.spinnerImg = new Spinner({
+                color: '#fff',
+                lines: 12
+            });
+            this.spinnerImg.spin(this.$imageWrapper);
+
+            getBigPictureList(0, 10000).then(_.bind(function(data) {
+                if (data.objects.length === 0) {
+                    return this.$imageWrapper.addClass('empty');
+                }
+
+                this.$imageWrapper.removeClass('empty');
+                _.each(data.objects.data, _.bind(function(article) {
+                    var item = new BigPicture(article);
+                    this.picturelist.push(item);
+                    item.$el.appendTo(this.$imageList);
+                }, this));
+                this.spinnerImg.stop();
+            }, this), _.bind(function() {
+                this.$imageWrapper.children('p.tip').html('网络异常');
+                this.$imageWrapper.addClass('empty');
+            }, this)).always(_.bind(function() {
+                this.spinnerImg.stop();
+            }, this));
+
+        } else if (this.picturelist.length !== 0) {
+            this.getPictureLoad();
+        }
         this.$el.show();
+    },
+
+    getPictureLoad: function() {
+        for (var i = 0; i < this.picturelist.length; i++) {
+            this.picturelist[i].loadAgain();
+        }
     },
 
     getLoad: function() {
@@ -13802,265 +13505,75 @@ var NewsView = BaseView.extend({
     }
 });
 
-var PhotoListView = BaseView.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <div class='photo-list-wrapper'>
-                <ul class='photo-list clearfix list-unstyled'>
-                </ul>
-            </div>
-            */
-            console.log
-        }).trim());
-
-        this.setElement($(tpl(options))[0]);
-        this.$list = this.$el.find('.photo-list');
-
-        this.photoList = [];
-        if (this.photoList.length === 0) {
-            this.spinner = new Spinner({
-                color: '#fff',
-                lines: 12
-            });
-            this.spinner.spin(this.$el[0]);
-        }
-        getPhotoList(0, 20).then(_.bind(function(data) {
-            if (data.objects.length === 0) {
-                return this.$el.addClass('empty');
-            }
-
-            this.$el.removeClass('empty');
-            this.photoList = data.objects;
-            this.render();
-        }, this), _.bind(function() {
-            this.$el.children('p.tip').html('网络异常');
-            this.$el.addClass('empty');
-        }, this)).always(_.bind(function() {
-            this.spinner.stop();
-        }, this));
-    },
-
-    render: function() {
-        _.each(this.photoList, _.bind(function(photo) {
-            var view = new PhotoCell(photo);
-            view.on('click', _.bind(function() {
-                Backbone.history.navigate("/photo/" + photo.id, {
-                    trigger: true
-                });
-            }, this));
-            view.$el.appendTo(this.$list);
-        }, this));
-    }
-});
-
-var TabView = Backbone.View.extend({
-    initialize: function(options) {
-        var tpl = _.template(multiline(function() {
-            /*@preserve
-            <ul class="nav nav-tabs header" role="tablist">
-                <li class="active"><a href="photo">正宗V海报</a></li>
-                <li><a href="video">正宗V视频</a></li>
-                <li><a href="news">正宗V资讯</a></li>
-            </ul> 
-             */
-            console.log
-        }).trim());
-
-        this.setElement($(tpl())[0]);
-
-        var self = this;
-
-        this.$el.on('click', 'a', function(e) {
-            e.preventDefault();
-
-            var $this = $(this);
-            var tab = $this.attr('href');
-            self.activate(tab);
-        });
-
-        this.$el.on('tap', function() {
-            this.hide();
-        });
-
-        this.views = {};
-    },
-
-    activate: function(tab) {
-        Backbone.history.navigate(tab, {
-            replace: true,
-            trigger: true
-        });
-
-        var activeTab = this.getActiveTab();
-        if (activeTab === tab) {
-            return;
-        }
-
-        this.$el.find("a[href=" + activeTab + "]").parent().removeClass('active');
-        this.views[activeTab] && this.views[activeTab].hide();
-        this.$el.find("a[href=" + tab + "]").parent().addClass('active');
-        this.views[tab] && this.views[tab].show();
-    },
-
-    addTab: function(tabname, view) {
-        this.views[tabname] = view;
-    },
-
-    getActiveTab: function() {
-        var $link = this.$el.find('li.active').children('a');
-        return $link.length > 0 ? $link.attr('href') : '';
-    }
-});
-
-var $content, tabView, photoListView, newsView, videoListView;
-
-var FansRouter = Backbone.Router.extend({
+var StudentRouter = Backbone.Router.extend({
     routes: {
-        "photo": "photoList",
-        "photo/:id": "photo",
-        "video": "video",
-        "news": "news",
-        "news/:id": "newsDetails",
+        "": "all"
+        //"bigpicture/:id": "bigpicture",
+        //"news/:id": "news"
     },
 
-    ensureTab: function(tab) {
-        if (!tabView) {
-            tabView = new TabView()
-            tabView.$el.appendTo(document.body);
-
-            photoListView = new PhotoListView();
-            tabView.addTab('photo', photoListView);
-
-            videoListView = new VideoListView();
-            tabView.addTab('video', videoListView);
-
-            newsView = new NewsView();
-            tabView.addTab('news', newsView);
-
-            _.each([photoListView, videoListView, newsView], function(view) {
-                view.$el.hide();
-                view.$el.appendTo($content);
-            });
-        }
-
-        tabView.activate(tab);
-    },
-
-    popupImageView: function() {
-        this.imageView.fadeOut(_.bind(function() {
-            this.imageView.destroy();
-            this.imageView = null;
-        }, this));
-
-        Backbone.history.navigate("/photo", {
-            replace: true,
-            trigger: true
-        });
-    },
-
-    photoList: function() {
-        if (this.imageView) {
-            this.popupImageView();
-        }
-
-        this.ensureTab('photo');
-        wechatshare(_.bind(function() {
-            return {
-                link: window.location.host + "/fans/photo",
-                desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
-                title: "加多宝中国好声音正宗V海报",
-                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
-            }
-        }, this));
-
-        if (!photoListView) {
-            photoListView = new PhotoListView();
-            photoListView.$el.appendTo($(".content"));
-        } else {
-            photoListView.show();
-        }
-    },
-
-    photo: function(id) {
-        if (!this.imageView) {
-            this.imageView = new ImageView();
-            this.imageView.$el.appendTo($(".content"));
-        }
-
-        console.log('set image id');
-        this.imageView.setImage(id);
-        console.log('fadeIn');
-        //this.imageView.fadeIn();
-
-        this.imageView.on('exit', _.bind(this.popupImageView, this));
-    },
-
-    video: function(id) {
-        this.ensureTab('video');
-
-        wechatshare(_.bind(function(){
-            return {
-                link: window.location.host + "/fans/video",
-                desc: "分享一个中国好声音视频给你,带你看好声音台前幕后!",
-                title: "加多宝中国好声音正宗V视频",
-                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
-            }
-        }, this));
-    },
-
-    news: function() {
-        if (this.newsDetail) {
+    all: function(){
+        /*if(this.studentItem){
             this.newsExit();
         }
+        
+        if(this.bigpicture){
+            this.bigpictureExit();
+        }*/
 
-        this.ensureTab('news');
-
-        wechatshare(_.bind(function(){
-            return {
-                link: window.location.host + "/fans/news",
-                desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
-                title: "加多宝中国好声音正宗V资讯",
-                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
-            }
-        }, this));
+        if (!this.studentPage) {
+            this.studentPage = new StudentPage();
+            this.studentPage.$el.appendTo($('.content'));
+            this.studentPage.show();
+        }else{
+            this.studentPage.show();
+        }
     },
 
-    newsExit: function() {
-        this.newsDetail.destroy();
-        this.newsDetail = null;
+    //以下都是错误的内容，待修改
+    /*newsExit: function() {
+        this.detailView.destroy();
+        this.detailView = null;
 
-        Backbone.history.navigate("/news", {
+        Backbone.history.navigate("", {
             replace: true,
             trigger: true
         });
     },
 
-    newsDetails: function(id) {
-        if (!this.newsDetail) {
-            this.newsDetail = new NewsDetail();
-            this.newsDetail.$el.appendTo($(".content"));
+    news: function(id){
+        if (!this.studentItem) {
+            this.studentItem = new StudentItem();
+            this.studentItem.$el.appendTo($('.content'));
         }
 
-        this.newsDetail.setNews(id);
-        this.newsDetail.on('exit', _.bind(this.newsExit, this));
+        this.studentItem.setNews(id);
+        this.studentItem.on('exit', _.bind(this.newsExit, this));
     },
+
+    bigpicture: function(id){
+        if (!this.bigPicture) {
+            this.bigPicture = new BigPicture();
+            this.bigPicture.$el.appendTo($('.content'));
+        }
+
+        this.pigPicture.setNews(id);
+        this.pigPicture.on('exit', _.bind(this.bigpictureExit, this));
+    }*/
 });
 
 $(function() {
     $content = $(".content");
 
-    new FansRouter();
-    if(!Backbone.history.start({
-        root: "/fans/"
-        //pushState: false
-    })) {
-        Backbone.history.navigate('photo', {trigger: true});
-    }
+    new StudentRouter();
+    Backbone.history.start({
+        root: "/student/",
+        pushState: true
+    });
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./components/spin.js/spin":10,"./tpl/VideoItem.html":11,"backbone":2,"fs":3,"image-sizing":4,"multiline":5,"multpl":7,"uid":8,"underscore":9}],2:[function(require,module,exports){
+},{"./components/spin.js/spin":10,"./components/wechat-share/index":11,"backbone":2,"fs":3,"image-sizing":4,"multiline":5,"multpl":7,"uid":8,"underscore":9}],2:[function(require,module,exports){
 //     Backbone.js 1.1.2
 
 //     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -15764,7 +15277,7 @@ function uid(len) {
 }
 
 },{}],9:[function(require,module,exports){
-//     Underscore.js 1.7.0
+//     Underscore.js 1.6.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Underscore may be freely distributed under the MIT license.
@@ -15780,6 +15293,9 @@ function uid(len) {
   // Save the previous value of the `_` variable.
   var previousUnderscore = root._;
 
+  // Establish the object that gets returned to break out of a loop iteration.
+  var breaker = {};
+
   // Save bytes in the minified (but not gzipped) version:
   var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
 
@@ -15794,6 +15310,15 @@ function uid(len) {
   // All **ECMAScript 5** native function implementations that we hope to use
   // are declared here.
   var
+    nativeForEach      = ArrayProto.forEach,
+    nativeMap          = ArrayProto.map,
+    nativeReduce       = ArrayProto.reduce,
+    nativeReduceRight  = ArrayProto.reduceRight,
+    nativeFilter       = ArrayProto.filter,
+    nativeEvery        = ArrayProto.every,
+    nativeSome         = ArrayProto.some,
+    nativeIndexOf      = ArrayProto.indexOf,
+    nativeLastIndexOf  = ArrayProto.lastIndexOf,
     nativeIsArray      = Array.isArray,
     nativeKeys         = Object.keys,
     nativeBind         = FuncProto.bind;
@@ -15807,7 +15332,8 @@ function uid(len) {
 
   // Export the Underscore object for **Node.js**, with
   // backwards-compatibility for the old `require()` API. If we're in
-  // the browser, add `_` as a global object.
+  // the browser, add `_` as a global object via a string identifier,
+  // for Closure Compiler "advanced" mode.
   if (typeof exports !== 'undefined') {
     if (typeof module !== 'undefined' && module.exports) {
       exports = module.exports = _;
@@ -15818,125 +15344,98 @@ function uid(len) {
   }
 
   // Current version.
-  _.VERSION = '1.7.0';
-
-  // Internal function that returns an efficient (for current engines) version
-  // of the passed-in callback, to be repeatedly applied in other Underscore
-  // functions.
-  var createCallback = function(func, context, argCount) {
-    if (context === void 0) return func;
-    switch (argCount == null ? 3 : argCount) {
-      case 1: return function(value) {
-        return func.call(context, value);
-      };
-      case 2: return function(value, other) {
-        return func.call(context, value, other);
-      };
-      case 3: return function(value, index, collection) {
-        return func.call(context, value, index, collection);
-      };
-      case 4: return function(accumulator, value, index, collection) {
-        return func.call(context, accumulator, value, index, collection);
-      };
-    }
-    return function() {
-      return func.apply(context, arguments);
-    };
-  };
-
-  // A mostly-internal function to generate callbacks that can be applied
-  // to each element in a collection, returning the desired result — either
-  // identity, an arbitrary callback, a property matcher, or a property accessor.
-  _.iteratee = function(value, context, argCount) {
-    if (value == null) return _.identity;
-    if (_.isFunction(value)) return createCallback(value, context, argCount);
-    if (_.isObject(value)) return _.matches(value);
-    return _.property(value);
-  };
+  _.VERSION = '1.6.0';
 
   // Collection Functions
   // --------------------
 
   // The cornerstone, an `each` implementation, aka `forEach`.
-  // Handles raw objects in addition to array-likes. Treats all
-  // sparse array-likes as if they were dense.
-  _.each = _.forEach = function(obj, iteratee, context) {
+  // Handles objects with the built-in `forEach`, arrays, and raw objects.
+  // Delegates to **ECMAScript 5**'s native `forEach` if available.
+  var each = _.each = _.forEach = function(obj, iterator, context) {
     if (obj == null) return obj;
-    iteratee = createCallback(iteratee, context);
-    var i, length = obj.length;
-    if (length === +length) {
-      for (i = 0; i < length; i++) {
-        iteratee(obj[i], i, obj);
+    if (nativeForEach && obj.forEach === nativeForEach) {
+      obj.forEach(iterator, context);
+    } else if (obj.length === +obj.length) {
+      for (var i = 0, length = obj.length; i < length; i++) {
+        if (iterator.call(context, obj[i], i, obj) === breaker) return;
       }
     } else {
       var keys = _.keys(obj);
-      for (i = 0, length = keys.length; i < length; i++) {
-        iteratee(obj[keys[i]], keys[i], obj);
+      for (var i = 0, length = keys.length; i < length; i++) {
+        if (iterator.call(context, obj[keys[i]], keys[i], obj) === breaker) return;
       }
     }
     return obj;
   };
 
-  // Return the results of applying the iteratee to each element.
-  _.map = _.collect = function(obj, iteratee, context) {
-    if (obj == null) return [];
-    iteratee = _.iteratee(iteratee, context);
-    var keys = obj.length !== +obj.length && _.keys(obj),
-        length = (keys || obj).length,
-        results = Array(length),
-        currentKey;
-    for (var index = 0; index < length; index++) {
-      currentKey = keys ? keys[index] : index;
-      results[index] = iteratee(obj[currentKey], currentKey, obj);
-    }
+  // Return the results of applying the iterator to each element.
+  // Delegates to **ECMAScript 5**'s native `map` if available.
+  _.map = _.collect = function(obj, iterator, context) {
+    var results = [];
+    if (obj == null) return results;
+    if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
+    each(obj, function(value, index, list) {
+      results.push(iterator.call(context, value, index, list));
+    });
     return results;
   };
 
   var reduceError = 'Reduce of empty array with no initial value';
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
-  // or `foldl`.
-  _.reduce = _.foldl = _.inject = function(obj, iteratee, memo, context) {
+  // or `foldl`. Delegates to **ECMAScript 5**'s native `reduce` if available.
+  _.reduce = _.foldl = _.inject = function(obj, iterator, memo, context) {
+    var initial = arguments.length > 2;
     if (obj == null) obj = [];
-    iteratee = createCallback(iteratee, context, 4);
-    var keys = obj.length !== +obj.length && _.keys(obj),
-        length = (keys || obj).length,
-        index = 0, currentKey;
-    if (arguments.length < 3) {
-      if (!length) throw new TypeError(reduceError);
-      memo = obj[keys ? keys[index++] : index++];
+    if (nativeReduce && obj.reduce === nativeReduce) {
+      if (context) iterator = _.bind(iterator, context);
+      return initial ? obj.reduce(iterator, memo) : obj.reduce(iterator);
     }
-    for (; index < length; index++) {
-      currentKey = keys ? keys[index] : index;
-      memo = iteratee(memo, obj[currentKey], currentKey, obj);
-    }
+    each(obj, function(value, index, list) {
+      if (!initial) {
+        memo = value;
+        initial = true;
+      } else {
+        memo = iterator.call(context, memo, value, index, list);
+      }
+    });
+    if (!initial) throw new TypeError(reduceError);
     return memo;
   };
 
   // The right-associative version of reduce, also known as `foldr`.
-  _.reduceRight = _.foldr = function(obj, iteratee, memo, context) {
+  // Delegates to **ECMAScript 5**'s native `reduceRight` if available.
+  _.reduceRight = _.foldr = function(obj, iterator, memo, context) {
+    var initial = arguments.length > 2;
     if (obj == null) obj = [];
-    iteratee = createCallback(iteratee, context, 4);
-    var keys = obj.length !== + obj.length && _.keys(obj),
-        index = (keys || obj).length,
-        currentKey;
-    if (arguments.length < 3) {
-      if (!index) throw new TypeError(reduceError);
-      memo = obj[keys ? keys[--index] : --index];
+    if (nativeReduceRight && obj.reduceRight === nativeReduceRight) {
+      if (context) iterator = _.bind(iterator, context);
+      return initial ? obj.reduceRight(iterator, memo) : obj.reduceRight(iterator);
     }
-    while (index--) {
-      currentKey = keys ? keys[index] : index;
-      memo = iteratee(memo, obj[currentKey], currentKey, obj);
+    var length = obj.length;
+    if (length !== +length) {
+      var keys = _.keys(obj);
+      length = keys.length;
     }
+    each(obj, function(value, index, list) {
+      index = keys ? keys[--length] : --length;
+      if (!initial) {
+        memo = obj[index];
+        initial = true;
+      } else {
+        memo = iterator.call(context, memo, obj[index], index, list);
+      }
+    });
+    if (!initial) throw new TypeError(reduceError);
     return memo;
   };
 
   // Return the first value which passes a truth test. Aliased as `detect`.
   _.find = _.detect = function(obj, predicate, context) {
     var result;
-    predicate = _.iteratee(predicate, context);
-    _.some(obj, function(value, index, list) {
-      if (predicate(value, index, list)) {
+    any(obj, function(value, index, list) {
+      if (predicate.call(context, value, index, list)) {
         result = value;
         return true;
       }
@@ -15945,58 +15444,61 @@ function uid(len) {
   };
 
   // Return all the elements that pass a truth test.
+  // Delegates to **ECMAScript 5**'s native `filter` if available.
   // Aliased as `select`.
   _.filter = _.select = function(obj, predicate, context) {
     var results = [];
     if (obj == null) return results;
-    predicate = _.iteratee(predicate, context);
-    _.each(obj, function(value, index, list) {
-      if (predicate(value, index, list)) results.push(value);
+    if (nativeFilter && obj.filter === nativeFilter) return obj.filter(predicate, context);
+    each(obj, function(value, index, list) {
+      if (predicate.call(context, value, index, list)) results.push(value);
     });
     return results;
   };
 
   // Return all the elements for which a truth test fails.
   _.reject = function(obj, predicate, context) {
-    return _.filter(obj, _.negate(_.iteratee(predicate)), context);
+    return _.filter(obj, function(value, index, list) {
+      return !predicate.call(context, value, index, list);
+    }, context);
   };
 
   // Determine whether all of the elements match a truth test.
+  // Delegates to **ECMAScript 5**'s native `every` if available.
   // Aliased as `all`.
   _.every = _.all = function(obj, predicate, context) {
-    if (obj == null) return true;
-    predicate = _.iteratee(predicate, context);
-    var keys = obj.length !== +obj.length && _.keys(obj),
-        length = (keys || obj).length,
-        index, currentKey;
-    for (index = 0; index < length; index++) {
-      currentKey = keys ? keys[index] : index;
-      if (!predicate(obj[currentKey], currentKey, obj)) return false;
-    }
-    return true;
+    predicate || (predicate = _.identity);
+    var result = true;
+    if (obj == null) return result;
+    if (nativeEvery && obj.every === nativeEvery) return obj.every(predicate, context);
+    each(obj, function(value, index, list) {
+      if (!(result = result && predicate.call(context, value, index, list))) return breaker;
+    });
+    return !!result;
   };
 
   // Determine if at least one element in the object matches a truth test.
+  // Delegates to **ECMAScript 5**'s native `some` if available.
   // Aliased as `any`.
-  _.some = _.any = function(obj, predicate, context) {
-    if (obj == null) return false;
-    predicate = _.iteratee(predicate, context);
-    var keys = obj.length !== +obj.length && _.keys(obj),
-        length = (keys || obj).length,
-        index, currentKey;
-    for (index = 0; index < length; index++) {
-      currentKey = keys ? keys[index] : index;
-      if (predicate(obj[currentKey], currentKey, obj)) return true;
-    }
-    return false;
+  var any = _.some = _.any = function(obj, predicate, context) {
+    predicate || (predicate = _.identity);
+    var result = false;
+    if (obj == null) return result;
+    if (nativeSome && obj.some === nativeSome) return obj.some(predicate, context);
+    each(obj, function(value, index, list) {
+      if (result || (result = predicate.call(context, value, index, list))) return breaker;
+    });
+    return !!result;
   };
 
   // Determine if the array or object contains a given value (using `===`).
   // Aliased as `include`.
   _.contains = _.include = function(obj, target) {
     if (obj == null) return false;
-    if (obj.length !== +obj.length) obj = _.values(obj);
-    return _.indexOf(obj, target) >= 0;
+    if (nativeIndexOf && obj.indexOf === nativeIndexOf) return obj.indexOf(target) != -1;
+    return any(obj, function(value) {
+      return value === target;
+    });
   };
 
   // Invoke a method (with arguments) on every item in a collection.
@@ -16025,67 +15527,51 @@ function uid(len) {
     return _.find(obj, _.matches(attrs));
   };
 
-  // Return the maximum element (or element-based computation).
-  _.max = function(obj, iteratee, context) {
-    var result = -Infinity, lastComputed = -Infinity,
-        value, computed;
-    if (iteratee == null && obj != null) {
-      obj = obj.length === +obj.length ? obj : _.values(obj);
-      for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];
-        if (value > result) {
-          result = value;
-        }
-      }
-    } else {
-      iteratee = _.iteratee(iteratee, context);
-      _.each(obj, function(value, index, list) {
-        computed = iteratee(value, index, list);
-        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
-          result = value;
-          lastComputed = computed;
-        }
-      });
+  // Return the maximum element or (element-based computation).
+  // Can't optimize arrays of integers longer than 65,535 elements.
+  // See [WebKit Bug 80797](https://bugs.webkit.org/show_bug.cgi?id=80797)
+  _.max = function(obj, iterator, context) {
+    if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
+      return Math.max.apply(Math, obj);
     }
+    var result = -Infinity, lastComputed = -Infinity;
+    each(obj, function(value, index, list) {
+      var computed = iterator ? iterator.call(context, value, index, list) : value;
+      if (computed > lastComputed) {
+        result = value;
+        lastComputed = computed;
+      }
+    });
     return result;
   };
 
   // Return the minimum element (or element-based computation).
-  _.min = function(obj, iteratee, context) {
-    var result = Infinity, lastComputed = Infinity,
-        value, computed;
-    if (iteratee == null && obj != null) {
-      obj = obj.length === +obj.length ? obj : _.values(obj);
-      for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];
-        if (value < result) {
-          result = value;
-        }
-      }
-    } else {
-      iteratee = _.iteratee(iteratee, context);
-      _.each(obj, function(value, index, list) {
-        computed = iteratee(value, index, list);
-        if (computed < lastComputed || computed === Infinity && result === Infinity) {
-          result = value;
-          lastComputed = computed;
-        }
-      });
+  _.min = function(obj, iterator, context) {
+    if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
+      return Math.min.apply(Math, obj);
     }
+    var result = Infinity, lastComputed = Infinity;
+    each(obj, function(value, index, list) {
+      var computed = iterator ? iterator.call(context, value, index, list) : value;
+      if (computed < lastComputed) {
+        result = value;
+        lastComputed = computed;
+      }
+    });
     return result;
   };
 
-  // Shuffle a collection, using the modern version of the
+  // Shuffle an array, using the modern version of the
   // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
   _.shuffle = function(obj) {
-    var set = obj && obj.length === +obj.length ? obj : _.values(obj);
-    var length = set.length;
-    var shuffled = Array(length);
-    for (var index = 0, rand; index < length; index++) {
-      rand = _.random(0, index);
-      if (rand !== index) shuffled[index] = shuffled[rand];
-      shuffled[rand] = set[index];
-    }
+    var rand;
+    var index = 0;
+    var shuffled = [];
+    each(obj, function(value) {
+      rand = _.random(index++);
+      shuffled[index - 1] = shuffled[rand];
+      shuffled[rand] = value;
+    });
     return shuffled;
   };
 
@@ -16100,14 +15586,21 @@ function uid(len) {
     return _.shuffle(obj).slice(0, Math.max(0, n));
   };
 
-  // Sort the object's values by a criterion produced by an iteratee.
-  _.sortBy = function(obj, iteratee, context) {
-    iteratee = _.iteratee(iteratee, context);
+  // An internal function to generate lookup iterators.
+  var lookupIterator = function(value) {
+    if (value == null) return _.identity;
+    if (_.isFunction(value)) return value;
+    return _.property(value);
+  };
+
+  // Sort the object's values by a criterion produced by an iterator.
+  _.sortBy = function(obj, iterator, context) {
+    iterator = lookupIterator(iterator);
     return _.pluck(_.map(obj, function(value, index, list) {
       return {
         value: value,
         index: index,
-        criteria: iteratee(value, index, list)
+        criteria: iterator.call(context, value, index, list)
       };
     }).sort(function(left, right) {
       var a = left.criteria;
@@ -16122,12 +15615,12 @@ function uid(len) {
 
   // An internal function used for aggregate "group by" operations.
   var group = function(behavior) {
-    return function(obj, iteratee, context) {
+    return function(obj, iterator, context) {
       var result = {};
-      iteratee = _.iteratee(iteratee, context);
-      _.each(obj, function(value, index) {
-        var key = iteratee(value, index, obj);
-        behavior(result, value, key);
+      iterator = lookupIterator(iterator);
+      each(obj, function(value, index) {
+        var key = iterator.call(context, value, index, obj);
+        behavior(result, key, value);
       });
       return result;
     };
@@ -16135,32 +15628,32 @@ function uid(len) {
 
   // Groups the object's values by a criterion. Pass either a string attribute
   // to group by, or a function that returns the criterion.
-  _.groupBy = group(function(result, value, key) {
-    if (_.has(result, key)) result[key].push(value); else result[key] = [value];
+  _.groupBy = group(function(result, key, value) {
+    _.has(result, key) ? result[key].push(value) : result[key] = [value];
   });
 
   // Indexes the object's values by a criterion, similar to `groupBy`, but for
   // when you know that your index values will be unique.
-  _.indexBy = group(function(result, value, key) {
+  _.indexBy = group(function(result, key, value) {
     result[key] = value;
   });
 
   // Counts instances of an object that group by a certain criterion. Pass
   // either a string attribute to count by, or a function that returns the
   // criterion.
-  _.countBy = group(function(result, value, key) {
-    if (_.has(result, key)) result[key]++; else result[key] = 1;
+  _.countBy = group(function(result, key) {
+    _.has(result, key) ? result[key]++ : result[key] = 1;
   });
 
   // Use a comparator function to figure out the smallest index at which
   // an object should be inserted so as to maintain order. Uses binary search.
-  _.sortedIndex = function(array, obj, iteratee, context) {
-    iteratee = _.iteratee(iteratee, context, 1);
-    var value = iteratee(obj);
+  _.sortedIndex = function(array, obj, iterator, context) {
+    iterator = lookupIterator(iterator);
+    var value = iterator.call(context, obj);
     var low = 0, high = array.length;
     while (low < high) {
-      var mid = low + high >>> 1;
-      if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
+      var mid = (low + high) >>> 1;
+      iterator.call(context, array[mid]) < value ? low = mid + 1 : high = mid;
     }
     return low;
   };
@@ -16176,18 +15669,7 @@ function uid(len) {
   // Return the number of elements in an object.
   _.size = function(obj) {
     if (obj == null) return 0;
-    return obj.length === +obj.length ? obj.length : _.keys(obj).length;
-  };
-
-  // Split a collection into two arrays: one whose elements all satisfy the given
-  // predicate, and one whose elements all do not satisfy the predicate.
-  _.partition = function(obj, predicate, context) {
-    predicate = _.iteratee(predicate, context);
-    var pass = [], fail = [];
-    _.each(obj, function(value, key, obj) {
-      (predicate(value, key, obj) ? pass : fail).push(value);
-    });
-    return [pass, fail];
+    return (obj.length === +obj.length) ? obj.length : _.keys(obj).length;
   };
 
   // Array Functions
@@ -16198,7 +15680,7 @@ function uid(len) {
   // allows it to work with `_.map`.
   _.first = _.head = _.take = function(array, n, guard) {
     if (array == null) return void 0;
-    if (n == null || guard) return array[0];
+    if ((n == null) || guard) return array[0];
     if (n < 0) return [];
     return slice.call(array, 0, n);
   };
@@ -16208,14 +15690,14 @@ function uid(len) {
   // the array, excluding the last N. The **guard** check allows it to work with
   // `_.map`.
   _.initial = function(array, n, guard) {
-    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
+    return slice.call(array, 0, array.length - ((n == null) || guard ? 1 : n));
   };
 
   // Get the last element of an array. Passing **n** will return the last N
   // values in the array. The **guard** check allows it to work with `_.map`.
   _.last = function(array, n, guard) {
     if (array == null) return void 0;
-    if (n == null || guard) return array[array.length - 1];
+    if ((n == null) || guard) return array[array.length - 1];
     return slice.call(array, Math.max(array.length - n, 0));
   };
 
@@ -16224,7 +15706,7 @@ function uid(len) {
   // the rest N values in the array. The **guard**
   // check allows it to work with `_.map`.
   _.rest = _.tail = _.drop = function(array, n, guard) {
-    return slice.call(array, n == null || guard ? 1 : n);
+    return slice.call(array, (n == null) || guard ? 1 : n);
   };
 
   // Trim out all falsy values from an array.
@@ -16233,26 +15715,23 @@ function uid(len) {
   };
 
   // Internal implementation of a recursive `flatten` function.
-  var flatten = function(input, shallow, strict, output) {
+  var flatten = function(input, shallow, output) {
     if (shallow && _.every(input, _.isArray)) {
       return concat.apply(output, input);
     }
-    for (var i = 0, length = input.length; i < length; i++) {
-      var value = input[i];
-      if (!_.isArray(value) && !_.isArguments(value)) {
-        if (!strict) output.push(value);
-      } else if (shallow) {
-        push.apply(output, value);
+    each(input, function(value) {
+      if (_.isArray(value) || _.isArguments(value)) {
+        shallow ? push.apply(output, value) : flatten(value, shallow, output);
       } else {
-        flatten(value, shallow, strict, output);
+        output.push(value);
       }
-    }
+    });
     return output;
   };
 
   // Flatten out an array, either recursively (by default), or just one level.
   _.flatten = function(array, shallow) {
-    return flatten(array, shallow, false, []);
+    return flatten(array, shallow, []);
   };
 
   // Return a version of the array that does not contain the specified value(s).
@@ -16260,77 +15739,68 @@ function uid(len) {
     return _.difference(array, slice.call(arguments, 1));
   };
 
+  // Split an array into two arrays: one whose elements all satisfy the given
+  // predicate, and one whose elements all do not satisfy the predicate.
+  _.partition = function(array, predicate) {
+    var pass = [], fail = [];
+    each(array, function(elem) {
+      (predicate(elem) ? pass : fail).push(elem);
+    });
+    return [pass, fail];
+  };
+
   // Produce a duplicate-free version of the array. If the array has already
   // been sorted, you have the option of using a faster algorithm.
   // Aliased as `unique`.
-  _.uniq = _.unique = function(array, isSorted, iteratee, context) {
-    if (array == null) return [];
-    if (!_.isBoolean(isSorted)) {
-      context = iteratee;
-      iteratee = isSorted;
+  _.uniq = _.unique = function(array, isSorted, iterator, context) {
+    if (_.isFunction(isSorted)) {
+      context = iterator;
+      iterator = isSorted;
       isSorted = false;
     }
-    if (iteratee != null) iteratee = _.iteratee(iteratee, context);
-    var result = [];
+    var initial = iterator ? _.map(array, iterator, context) : array;
+    var results = [];
     var seen = [];
-    for (var i = 0, length = array.length; i < length; i++) {
-      var value = array[i];
-      if (isSorted) {
-        if (!i || seen !== value) result.push(value);
-        seen = value;
-      } else if (iteratee) {
-        var computed = iteratee(value, i, array);
-        if (_.indexOf(seen, computed) < 0) {
-          seen.push(computed);
-          result.push(value);
-        }
-      } else if (_.indexOf(result, value) < 0) {
-        result.push(value);
+    each(initial, function(value, index) {
+      if (isSorted ? (!index || seen[seen.length - 1] !== value) : !_.contains(seen, value)) {
+        seen.push(value);
+        results.push(array[index]);
       }
-    }
-    return result;
+    });
+    return results;
   };
 
   // Produce an array that contains the union: each distinct element from all of
   // the passed-in arrays.
   _.union = function() {
-    return _.uniq(flatten(arguments, true, true, []));
+    return _.uniq(_.flatten(arguments, true));
   };
 
   // Produce an array that contains every item shared between all the
   // passed-in arrays.
   _.intersection = function(array) {
-    if (array == null) return [];
-    var result = [];
-    var argsLength = arguments.length;
-    for (var i = 0, length = array.length; i < length; i++) {
-      var item = array[i];
-      if (_.contains(result, item)) continue;
-      for (var j = 1; j < argsLength; j++) {
-        if (!_.contains(arguments[j], item)) break;
-      }
-      if (j === argsLength) result.push(item);
-    }
-    return result;
+    var rest = slice.call(arguments, 1);
+    return _.filter(_.uniq(array), function(item) {
+      return _.every(rest, function(other) {
+        return _.contains(other, item);
+      });
+    });
   };
 
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
   _.difference = function(array) {
-    var rest = flatten(slice.call(arguments, 1), true, true, []);
-    return _.filter(array, function(value){
-      return !_.contains(rest, value);
-    });
+    var rest = concat.apply(ArrayProto, slice.call(arguments, 1));
+    return _.filter(array, function(value){ return !_.contains(rest, value); });
   };
 
   // Zip together multiple lists into a single array -- elements that share
   // an index go together.
-  _.zip = function(array) {
-    if (array == null) return [];
-    var length = _.max(arguments, 'length').length;
-    var results = Array(length);
+  _.zip = function() {
+    var length = _.max(_.pluck(arguments, 'length').concat(0));
+    var results = new Array(length);
     for (var i = 0; i < length; i++) {
-      results[i] = _.pluck(arguments, i);
+      results[i] = _.pluck(arguments, '' + i);
     }
     return results;
   };
@@ -16351,8 +15821,10 @@ function uid(len) {
     return result;
   };
 
-  // Return the position of the first occurrence of an item in an array,
-  // or -1 if the item is not included in the array.
+  // If the browser doesn't supply us with indexOf (I'm looking at you, **MSIE**),
+  // we need this function. Return the position of the first occurrence of an
+  // item in an array, or -1 if the item is not included in the array.
+  // Delegates to **ECMAScript 5**'s native `indexOf` if available.
   // If the array is large and already in sort order, pass `true`
   // for **isSorted** to use binary search.
   _.indexOf = function(array, item, isSorted) {
@@ -16360,23 +15832,26 @@ function uid(len) {
     var i = 0, length = array.length;
     if (isSorted) {
       if (typeof isSorted == 'number') {
-        i = isSorted < 0 ? Math.max(0, length + isSorted) : isSorted;
+        i = (isSorted < 0 ? Math.max(0, length + isSorted) : isSorted);
       } else {
         i = _.sortedIndex(array, item);
         return array[i] === item ? i : -1;
       }
     }
+    if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item, isSorted);
     for (; i < length; i++) if (array[i] === item) return i;
     return -1;
   };
 
+  // Delegates to **ECMAScript 5**'s native `lastIndexOf` if available.
   _.lastIndexOf = function(array, item, from) {
     if (array == null) return -1;
-    var idx = array.length;
-    if (typeof from == 'number') {
-      idx = from < 0 ? idx + from + 1 : Math.min(idx, from + 1);
+    var hasIndex = from != null;
+    if (nativeLastIndexOf && array.lastIndexOf === nativeLastIndexOf) {
+      return hasIndex ? array.lastIndexOf(item, from) : array.lastIndexOf(item);
     }
-    while (--idx >= 0) if (array[idx] === item) return idx;
+    var i = (hasIndex ? from : array.length);
+    while (i--) if (array[i] === item) return i;
     return -1;
   };
 
@@ -16388,13 +15863,15 @@ function uid(len) {
       stop = start || 0;
       start = 0;
     }
-    step = step || 1;
+    step = arguments[2] || 1;
 
     var length = Math.max(Math.ceil((stop - start) / step), 0);
-    var range = Array(length);
+    var idx = 0;
+    var range = new Array(length);
 
-    for (var idx = 0; idx < length; idx++, start += step) {
-      range[idx] = start;
+    while(idx < length) {
+      range[idx++] = start;
+      start += step;
     }
 
     return range;
@@ -16404,7 +15881,7 @@ function uid(len) {
   // ------------------
 
   // Reusable constructor function for prototype setting.
-  var Ctor = function(){};
+  var ctor = function(){};
 
   // Create a function bound to a given object (assigning `this`, and arguments,
   // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
@@ -16412,18 +15889,17 @@ function uid(len) {
   _.bind = function(func, context) {
     var args, bound;
     if (nativeBind && func.bind === nativeBind) return nativeBind.apply(func, slice.call(arguments, 1));
-    if (!_.isFunction(func)) throw new TypeError('Bind must be called on a function');
+    if (!_.isFunction(func)) throw new TypeError;
     args = slice.call(arguments, 2);
-    bound = function() {
+    return bound = function() {
       if (!(this instanceof bound)) return func.apply(context, args.concat(slice.call(arguments)));
-      Ctor.prototype = func.prototype;
-      var self = new Ctor;
-      Ctor.prototype = null;
+      ctor.prototype = func.prototype;
+      var self = new ctor;
+      ctor.prototype = null;
       var result = func.apply(self, args.concat(slice.call(arguments)));
-      if (_.isObject(result)) return result;
+      if (Object(result) === result) return result;
       return self;
     };
-    return bound;
   };
 
   // Partially apply a function by creating a version that has had some of its
@@ -16446,34 +15922,27 @@ function uid(len) {
   // are the method names to be bound. Useful for ensuring that all callbacks
   // defined on an object belong to it.
   _.bindAll = function(obj) {
-    var i, length = arguments.length, key;
-    if (length <= 1) throw new Error('bindAll must be passed function names');
-    for (i = 1; i < length; i++) {
-      key = arguments[i];
-      obj[key] = _.bind(obj[key], obj);
-    }
+    var funcs = slice.call(arguments, 1);
+    if (funcs.length === 0) throw new Error('bindAll must be passed function names');
+    each(funcs, function(f) { obj[f] = _.bind(obj[f], obj); });
     return obj;
   };
 
   // Memoize an expensive function by storing its results.
   _.memoize = function(func, hasher) {
-    var memoize = function(key) {
-      var cache = memoize.cache;
-      var address = hasher ? hasher.apply(this, arguments) : key;
-      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
-      return cache[address];
+    var memo = {};
+    hasher || (hasher = _.identity);
+    return function() {
+      var key = hasher.apply(this, arguments);
+      return _.has(memo, key) ? memo[key] : (memo[key] = func.apply(this, arguments));
     };
-    memoize.cache = {};
-    return memoize;
   };
 
   // Delays a function for the given number of milliseconds, and then calls
   // it with the arguments supplied.
   _.delay = function(func, wait) {
     var args = slice.call(arguments, 2);
-    return setTimeout(function(){
-      return func.apply(null, args);
-    }, wait);
+    return setTimeout(function(){ return func.apply(null, args); }, wait);
   };
 
   // Defers a function, scheduling it to run after the current call stack has
@@ -16491,12 +15960,12 @@ function uid(len) {
     var context, args, result;
     var timeout = null;
     var previous = 0;
-    if (!options) options = {};
+    options || (options = {});
     var later = function() {
       previous = options.leading === false ? 0 : _.now();
       timeout = null;
       result = func.apply(context, args);
-      if (!timeout) context = args = null;
+      context = args = null;
     };
     return function() {
       var now = _.now();
@@ -16504,12 +15973,12 @@ function uid(len) {
       var remaining = wait - (now - previous);
       context = this;
       args = arguments;
-      if (remaining <= 0 || remaining > wait) {
+      if (remaining <= 0) {
         clearTimeout(timeout);
         timeout = null;
         previous = now;
         result = func.apply(context, args);
-        if (!timeout) context = args = null;
+        context = args = null;
       } else if (!timeout && options.trailing !== false) {
         timeout = setTimeout(later, remaining);
       }
@@ -16526,14 +15995,13 @@ function uid(len) {
 
     var later = function() {
       var last = _.now() - timestamp;
-
-      if (last < wait && last > 0) {
+      if (last < wait) {
         timeout = setTimeout(later, wait - last);
       } else {
         timeout = null;
         if (!immediate) {
           result = func.apply(context, args);
-          if (!timeout) context = args = null;
+          context = args = null;
         }
       }
     };
@@ -16543,13 +16011,28 @@ function uid(len) {
       args = arguments;
       timestamp = _.now();
       var callNow = immediate && !timeout;
-      if (!timeout) timeout = setTimeout(later, wait);
+      if (!timeout) {
+        timeout = setTimeout(later, wait);
+      }
       if (callNow) {
         result = func.apply(context, args);
         context = args = null;
       }
 
       return result;
+    };
+  };
+
+  // Returns a function that will be executed at most one time, no matter how
+  // often you call it. Useful for lazy initialization.
+  _.once = function(func) {
+    var ran = false, memo;
+    return function() {
+      if (ran) return memo;
+      ran = true;
+      memo = func.apply(this, arguments);
+      func = null;
+      return memo;
     };
   };
 
@@ -16560,23 +16043,16 @@ function uid(len) {
     return _.partial(wrapper, func);
   };
 
-  // Returns a negated version of the passed-in predicate.
-  _.negate = function(predicate) {
-    return function() {
-      return !predicate.apply(this, arguments);
-    };
-  };
-
   // Returns a function that is the composition of a list of functions, each
   // consuming the return value of the function that follows.
   _.compose = function() {
-    var args = arguments;
-    var start = args.length - 1;
+    var funcs = arguments;
     return function() {
-      var i = start;
-      var result = args[start].apply(this, arguments);
-      while (i--) result = args[i].call(this, result);
-      return result;
+      var args = arguments;
+      for (var i = funcs.length - 1; i >= 0; i--) {
+        args = [funcs[i].apply(this, args)];
+      }
+      return args[0];
     };
   };
 
@@ -16588,23 +16064,6 @@ function uid(len) {
       }
     };
   };
-
-  // Returns a function that will only be executed before being called N times.
-  _.before = function(times, func) {
-    var memo;
-    return function() {
-      if (--times > 0) {
-        memo = func.apply(this, arguments);
-      } else {
-        func = null;
-      }
-      return memo;
-    };
-  };
-
-  // Returns a function that will be executed at most one time, no matter how
-  // often you call it. Useful for lazy initialization.
-  _.once = _.partial(_.before, 2);
 
   // Object Functions
   // ----------------
@@ -16623,7 +16082,7 @@ function uid(len) {
   _.values = function(obj) {
     var keys = _.keys(obj);
     var length = keys.length;
-    var values = Array(length);
+    var values = new Array(length);
     for (var i = 0; i < length; i++) {
       values[i] = obj[keys[i]];
     }
@@ -16634,7 +16093,7 @@ function uid(len) {
   _.pairs = function(obj) {
     var keys = _.keys(obj);
     var length = keys.length;
-    var pairs = Array(length);
+    var pairs = new Array(length);
     for (var i = 0; i < length; i++) {
       pairs[i] = [keys[i], obj[keys[i]]];
     }
@@ -16663,62 +16122,45 @@ function uid(len) {
 
   // Extend a given object with all the properties in passed-in object(s).
   _.extend = function(obj) {
-    if (!_.isObject(obj)) return obj;
-    var source, prop;
-    for (var i = 1, length = arguments.length; i < length; i++) {
-      source = arguments[i];
-      for (prop in source) {
-        if (hasOwnProperty.call(source, prop)) {
-            obj[prop] = source[prop];
+    each(slice.call(arguments, 1), function(source) {
+      if (source) {
+        for (var prop in source) {
+          obj[prop] = source[prop];
         }
       }
-    }
+    });
     return obj;
   };
 
   // Return a copy of the object only containing the whitelisted properties.
-  _.pick = function(obj, iteratee, context) {
-    var result = {}, key;
-    if (obj == null) return result;
-    if (_.isFunction(iteratee)) {
-      iteratee = createCallback(iteratee, context);
-      for (key in obj) {
-        var value = obj[key];
-        if (iteratee(value, key, obj)) result[key] = value;
-      }
-    } else {
-      var keys = concat.apply([], slice.call(arguments, 1));
-      obj = new Object(obj);
-      for (var i = 0, length = keys.length; i < length; i++) {
-        key = keys[i];
-        if (key in obj) result[key] = obj[key];
-      }
-    }
-    return result;
+  _.pick = function(obj) {
+    var copy = {};
+    var keys = concat.apply(ArrayProto, slice.call(arguments, 1));
+    each(keys, function(key) {
+      if (key in obj) copy[key] = obj[key];
+    });
+    return copy;
   };
 
    // Return a copy of the object without the blacklisted properties.
-  _.omit = function(obj, iteratee, context) {
-    if (_.isFunction(iteratee)) {
-      iteratee = _.negate(iteratee);
-    } else {
-      var keys = _.map(concat.apply([], slice.call(arguments, 1)), String);
-      iteratee = function(value, key) {
-        return !_.contains(keys, key);
-      };
+  _.omit = function(obj) {
+    var copy = {};
+    var keys = concat.apply(ArrayProto, slice.call(arguments, 1));
+    for (var key in obj) {
+      if (!_.contains(keys, key)) copy[key] = obj[key];
     }
-    return _.pick(obj, iteratee, context);
+    return copy;
   };
 
   // Fill in a given object with default properties.
   _.defaults = function(obj) {
-    if (!_.isObject(obj)) return obj;
-    for (var i = 1, length = arguments.length; i < length; i++) {
-      var source = arguments[i];
-      for (var prop in source) {
-        if (obj[prop] === void 0) obj[prop] = source[prop];
+    each(slice.call(arguments, 1), function(source) {
+      if (source) {
+        for (var prop in source) {
+          if (obj[prop] === void 0) obj[prop] = source[prop];
+        }
       }
-    }
+    });
     return obj;
   };
 
@@ -16740,7 +16182,7 @@ function uid(len) {
   var eq = function(a, b, aStack, bStack) {
     // Identical objects are equal. `0 === -0`, but they aren't identical.
     // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
-    if (a === b) return a !== 0 || 1 / a === 1 / b;
+    if (a === b) return a !== 0 || 1 / a == 1 / b;
     // A strict comparison is necessary because `null == undefined`.
     if (a == null || b == null) return a === b;
     // Unwrap any wrapped objects.
@@ -16748,27 +16190,29 @@ function uid(len) {
     if (b instanceof _) b = b._wrapped;
     // Compare `[[Class]]` names.
     var className = toString.call(a);
-    if (className !== toString.call(b)) return false;
+    if (className != toString.call(b)) return false;
     switch (className) {
-      // Strings, numbers, regular expressions, dates, and booleans are compared by value.
-      case '[object RegExp]':
-      // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
+      // Strings, numbers, dates, and booleans are compared by value.
       case '[object String]':
         // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
         // equivalent to `new String("5")`.
-        return '' + a === '' + b;
+        return a == String(b);
       case '[object Number]':
-        // `NaN`s are equivalent, but non-reflexive.
-        // Object(NaN) is equivalent to NaN
-        if (+a !== +a) return +b !== +b;
-        // An `egal` comparison is performed for other numeric values.
-        return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+        // `NaN`s are equivalent, but non-reflexive. An `egal` comparison is performed for
+        // other numeric values.
+        return a != +a ? b != +b : (a == 0 ? 1 / a == 1 / b : a == +b);
       case '[object Date]':
       case '[object Boolean]':
         // Coerce dates and booleans to numeric primitive values. Dates are compared by their
         // millisecond representations. Note that invalid dates with millisecond representations
         // of `NaN` are not equivalent.
-        return +a === +b;
+        return +a == +b;
+      // RegExps are compared by their source patterns and flags.
+      case '[object RegExp]':
+        return a.source == b.source &&
+               a.global == b.global &&
+               a.multiline == b.multiline &&
+               a.ignoreCase == b.ignoreCase;
     }
     if (typeof a != 'object' || typeof b != 'object') return false;
     // Assume equality for cyclic structures. The algorithm for detecting cyclic
@@ -16777,29 +16221,25 @@ function uid(len) {
     while (length--) {
       // Linear search. Performance is inversely proportional to the number of
       // unique nested structures.
-      if (aStack[length] === a) return bStack[length] === b;
+      if (aStack[length] == a) return bStack[length] == b;
     }
     // Objects with different constructors are not equivalent, but `Object`s
     // from different frames are.
     var aCtor = a.constructor, bCtor = b.constructor;
-    if (
-      aCtor !== bCtor &&
-      // Handle Object.create(x) cases
-      'constructor' in a && 'constructor' in b &&
-      !(_.isFunction(aCtor) && aCtor instanceof aCtor &&
-        _.isFunction(bCtor) && bCtor instanceof bCtor)
-    ) {
+    if (aCtor !== bCtor && !(_.isFunction(aCtor) && (aCtor instanceof aCtor) &&
+                             _.isFunction(bCtor) && (bCtor instanceof bCtor))
+                        && ('constructor' in a && 'constructor' in b)) {
       return false;
     }
     // Add the first object to the stack of traversed objects.
     aStack.push(a);
     bStack.push(b);
-    var size, result;
+    var size = 0, result = true;
     // Recursively compare objects and arrays.
-    if (className === '[object Array]') {
+    if (className == '[object Array]') {
       // Compare array lengths to determine if a deep comparison is necessary.
       size = a.length;
-      result = size === b.length;
+      result = size == b.length;
       if (result) {
         // Deep compare the contents, ignoring non-numeric properties.
         while (size--) {
@@ -16808,16 +16248,20 @@ function uid(len) {
       }
     } else {
       // Deep compare objects.
-      var keys = _.keys(a), key;
-      size = keys.length;
-      // Ensure that both objects contain the same number of properties before comparing deep equality.
-      result = _.keys(b).length === size;
-      if (result) {
-        while (size--) {
-          // Deep compare each member
-          key = keys[size];
+      for (var key in a) {
+        if (_.has(a, key)) {
+          // Count the expected number of properties.
+          size++;
+          // Deep compare each member.
           if (!(result = _.has(b, key) && eq(a[key], b[key], aStack, bStack))) break;
         }
+      }
+      // Ensure that both objects contain the same number of properties.
+      if (result) {
+        for (key in b) {
+          if (_.has(b, key) && !(size--)) break;
+        }
+        result = !size;
       }
     }
     // Remove the first object from the stack of traversed objects.
@@ -16835,7 +16279,7 @@ function uid(len) {
   // An "empty" object has no enumerable own-properties.
   _.isEmpty = function(obj) {
     if (obj == null) return true;
-    if (_.isArray(obj) || _.isString(obj) || _.isArguments(obj)) return obj.length === 0;
+    if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
     for (var key in obj) if (_.has(obj, key)) return false;
     return true;
   };
@@ -16848,19 +16292,18 @@ function uid(len) {
   // Is a given value an array?
   // Delegates to ECMA5's native Array.isArray
   _.isArray = nativeIsArray || function(obj) {
-    return toString.call(obj) === '[object Array]';
+    return toString.call(obj) == '[object Array]';
   };
 
   // Is a given variable an object?
   _.isObject = function(obj) {
-    var type = typeof obj;
-    return type === 'function' || type === 'object' && !!obj;
+    return obj === Object(obj);
   };
 
   // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp.
-  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(name) {
+  each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(name) {
     _['is' + name] = function(obj) {
-      return toString.call(obj) === '[object ' + name + ']';
+      return toString.call(obj) == '[object ' + name + ']';
     };
   });
 
@@ -16868,14 +16311,14 @@ function uid(len) {
   // there isn't any inspectable "Arguments" type.
   if (!_.isArguments(arguments)) {
     _.isArguments = function(obj) {
-      return _.has(obj, 'callee');
+      return !!(obj && _.has(obj, 'callee'));
     };
   }
 
-  // Optimize `isFunction` if appropriate. Work around an IE 11 bug.
-  if (typeof /./ !== 'function') {
+  // Optimize `isFunction` if appropriate.
+  if (typeof (/./) !== 'function') {
     _.isFunction = function(obj) {
-      return typeof obj == 'function' || false;
+      return typeof obj === 'function';
     };
   }
 
@@ -16886,12 +16329,12 @@ function uid(len) {
 
   // Is the given value `NaN`? (NaN is the only number which does not equal itself).
   _.isNaN = function(obj) {
-    return _.isNumber(obj) && obj !== +obj;
+    return _.isNumber(obj) && obj != +obj;
   };
 
   // Is a given value a boolean?
   _.isBoolean = function(obj) {
-    return obj === true || obj === false || toString.call(obj) === '[object Boolean]';
+    return obj === true || obj === false || toString.call(obj) == '[object Boolean]';
   };
 
   // Is a given value equal to null?
@@ -16907,7 +16350,7 @@ function uid(len) {
   // Shortcut function for checking if an object has a given property directly
   // on itself (in other words, not on a prototype).
   _.has = function(obj, key) {
-    return obj != null && hasOwnProperty.call(obj, key);
+    return hasOwnProperty.call(obj, key);
   };
 
   // Utility Functions
@@ -16920,18 +16363,16 @@ function uid(len) {
     return this;
   };
 
-  // Keep the identity function around for default iteratees.
+  // Keep the identity function around for default iterators.
   _.identity = function(value) {
     return value;
   };
 
   _.constant = function(value) {
-    return function() {
+    return function () {
       return value;
     };
   };
-
-  _.noop = function(){};
 
   _.property = function(key) {
     return function(obj) {
@@ -16941,23 +16382,20 @@ function uid(len) {
 
   // Returns a predicate for checking whether an object has a given set of `key:value` pairs.
   _.matches = function(attrs) {
-    var pairs = _.pairs(attrs), length = pairs.length;
     return function(obj) {
-      if (obj == null) return !length;
-      obj = new Object(obj);
-      for (var i = 0; i < length; i++) {
-        var pair = pairs[i], key = pair[0];
-        if (pair[1] !== obj[key] || !(key in obj)) return false;
+      if (obj === attrs) return true; //avoid comparing an object to itself.
+      for (var key in attrs) {
+        if (attrs[key] !== obj[key])
+          return false;
       }
       return true;
-    };
+    }
   };
 
   // Run a function **n** times.
-  _.times = function(n, iteratee, context) {
+  _.times = function(n, iterator, context) {
     var accum = Array(Math.max(0, n));
-    iteratee = createCallback(iteratee, context, 1);
-    for (var i = 0; i < n; i++) accum[i] = iteratee(i);
+    for (var i = 0; i < n; i++) accum[i] = iterator.call(context, i);
     return accum;
   };
 
@@ -16971,44 +16409,54 @@ function uid(len) {
   };
 
   // A (possibly faster) way to get the current timestamp as an integer.
-  _.now = Date.now || function() {
-    return new Date().getTime();
-  };
+  _.now = Date.now || function() { return new Date().getTime(); };
 
-   // List of HTML entities for escaping.
-  var escapeMap = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#x27;',
-    '`': '&#x60;'
+  // List of HTML entities for escaping.
+  var entityMap = {
+    escape: {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;'
+    }
   };
-  var unescapeMap = _.invert(escapeMap);
+  entityMap.unescape = _.invert(entityMap.escape);
+
+  // Regexes containing the keys and values listed immediately above.
+  var entityRegexes = {
+    escape:   new RegExp('[' + _.keys(entityMap.escape).join('') + ']', 'g'),
+    unescape: new RegExp('(' + _.keys(entityMap.unescape).join('|') + ')', 'g')
+  };
 
   // Functions for escaping and unescaping strings to/from HTML interpolation.
-  var createEscaper = function(map) {
-    var escaper = function(match) {
-      return map[match];
+  _.each(['escape', 'unescape'], function(method) {
+    _[method] = function(string) {
+      if (string == null) return '';
+      return ('' + string).replace(entityRegexes[method], function(match) {
+        return entityMap[method][match];
+      });
     };
-    // Regexes for identifying a key that needs to be escaped
-    var source = '(?:' + _.keys(map).join('|') + ')';
-    var testRegexp = RegExp(source);
-    var replaceRegexp = RegExp(source, 'g');
-    return function(string) {
-      string = string == null ? '' : '' + string;
-      return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
-    };
-  };
-  _.escape = createEscaper(escapeMap);
-  _.unescape = createEscaper(unescapeMap);
+  });
 
   // If the value of the named `property` is a function then invoke it with the
   // `object` as context; otherwise, return it.
   _.result = function(object, property) {
     if (object == null) return void 0;
     var value = object[property];
-    return _.isFunction(value) ? object[property]() : value;
+    return _.isFunction(value) ? value.call(object) : value;
+  };
+
+  // Add your own custom functions to the Underscore object.
+  _.mixin = function(obj) {
+    each(_.functions(obj), function(name) {
+      var func = _[name] = obj[name];
+      _.prototype[name] = function() {
+        var args = [this._wrapped];
+        push.apply(args, arguments);
+        return result.call(this, func.apply(_, args));
+      };
+    });
   };
 
   // Generate a unique integer id (unique within the entire client session).
@@ -17039,26 +16487,22 @@ function uid(len) {
     '\\':     '\\',
     '\r':     'r',
     '\n':     'n',
+    '\t':     't',
     '\u2028': 'u2028',
     '\u2029': 'u2029'
   };
 
-  var escaper = /\\|'|\r|\n|\u2028|\u2029/g;
-
-  var escapeChar = function(match) {
-    return '\\' + escapes[match];
-  };
+  var escaper = /\\|'|\r|\n|\t|\u2028|\u2029/g;
 
   // JavaScript micro-templating, similar to John Resig's implementation.
   // Underscore templating handles arbitrary delimiters, preserves whitespace,
   // and correctly escapes quotes within interpolated code.
-  // NB: `oldSettings` only exists for backwards compatibility.
-  _.template = function(text, settings, oldSettings) {
-    if (!settings && oldSettings) settings = oldSettings;
+  _.template = function(text, data, settings) {
+    var render;
     settings = _.defaults({}, settings, _.templateSettings);
 
     // Combine delimiters into one regular expression via alternation.
-    var matcher = RegExp([
+    var matcher = new RegExp([
       (settings.escape || noMatch).source,
       (settings.interpolate || noMatch).source,
       (settings.evaluate || noMatch).source
@@ -17068,18 +16512,19 @@ function uid(len) {
     var index = 0;
     var source = "__p+='";
     text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
-      source += text.slice(index, offset).replace(escaper, escapeChar);
-      index = offset + match.length;
+      source += text.slice(index, offset)
+        .replace(escaper, function(match) { return '\\' + escapes[match]; });
 
       if (escape) {
         source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
-      } else if (interpolate) {
+      }
+      if (interpolate) {
         source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
-      } else if (evaluate) {
+      }
+      if (evaluate) {
         source += "';\n" + evaluate + "\n__p+='";
       }
-
-      // Adobe VMs need the match returned to produce the correct offest.
+      index = offset + match.length;
       return match;
     });
     source += "';\n";
@@ -17089,31 +16534,29 @@ function uid(len) {
 
     source = "var __t,__p='',__j=Array.prototype.join," +
       "print=function(){__p+=__j.call(arguments,'');};\n" +
-      source + 'return __p;\n';
+      source + "return __p;\n";
 
     try {
-      var render = new Function(settings.variable || 'obj', '_', source);
+      render = new Function(settings.variable || 'obj', '_', source);
     } catch (e) {
       e.source = source;
       throw e;
     }
 
+    if (data) return render(data, _);
     var template = function(data) {
       return render.call(this, data, _);
     };
 
-    // Provide the compiled source as a convenience for precompilation.
-    var argument = settings.variable || 'obj';
-    template.source = 'function(' + argument + '){\n' + source + '}';
+    // Provide the compiled function source as a convenience for precompilation.
+    template.source = 'function(' + (settings.variable || 'obj') + '){\n' + source + '}';
 
     return template;
   };
 
-  // Add a "chain" function. Start chaining a wrapped Underscore object.
+  // Add a "chain" function, which will delegate to the wrapper.
   _.chain = function(obj) {
-    var instance = _(obj);
-    instance._chain = true;
-    return instance;
+    return _(obj).chain();
   };
 
   // OOP
@@ -17127,44 +16570,42 @@ function uid(len) {
     return this._chain ? _(obj).chain() : obj;
   };
 
-  // Add your own custom functions to the Underscore object.
-  _.mixin = function(obj) {
-    _.each(_.functions(obj), function(name) {
-      var func = _[name] = obj[name];
-      _.prototype[name] = function() {
-        var args = [this._wrapped];
-        push.apply(args, arguments);
-        return result.call(this, func.apply(_, args));
-      };
-    });
-  };
-
   // Add all of the Underscore functions to the wrapper object.
   _.mixin(_);
 
   // Add all mutator Array functions to the wrapper.
-  _.each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(name) {
+  each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(name) {
     var method = ArrayProto[name];
     _.prototype[name] = function() {
       var obj = this._wrapped;
       method.apply(obj, arguments);
-      if ((name === 'shift' || name === 'splice') && obj.length === 0) delete obj[0];
+      if ((name == 'shift' || name == 'splice') && obj.length === 0) delete obj[0];
       return result.call(this, obj);
     };
   });
 
   // Add all accessor Array functions to the wrapper.
-  _.each(['concat', 'join', 'slice'], function(name) {
+  each(['concat', 'join', 'slice'], function(name) {
     var method = ArrayProto[name];
     _.prototype[name] = function() {
       return result.call(this, method.apply(this._wrapped, arguments));
     };
   });
 
-  // Extracts the result from a wrapped and chained object.
-  _.prototype.value = function() {
-    return this._wrapped;
-  };
+  _.extend(_.prototype, {
+
+    // Start chaining a wrapped Underscore object.
+    chain: function() {
+      this._chain = true;
+      return this;
+    },
+
+    // Extracts the result from a wrapped and chained object.
+    value: function() {
+      return this._wrapped;
+    }
+
+  });
 
   // AMD registration happens at the end for compatibility with AMD loaders
   // that may not enforce next-turn semantics on modules. Even though general
@@ -17178,7 +16619,7 @@ function uid(len) {
       return _;
     });
   }
-}.call(this));
+}).call(this);
 
 },{}],10:[function(require,module,exports){
 /**
@@ -17532,6 +16973,65 @@ function uid(len) {
 }));
 
 },{}],11:[function(require,module,exports){
-module.exports = "<li class='video-item'>\n    <div class='title'><%= name %></div>\n    <div class='date'>2014-08-09</div>\n    <div class='cover-wrapper'>\n        <div class='cover'>\n            <img class='image' style='display: none' src='<%= image %>'>\n            <a href='<%= url %>' class='btn-play'></a>\n        </div>\n    </div>\n    <div class='description'><%= description %></div>\n</li>\n";
+function isObject(obj) {
+    var type = typeof obj;
+    return type === 'function' || type === 'object' && !!obj;
+}
+
+function getFallbackImageUrl() {
+    var img = document.querySelector('img');
+    return img ? img.src : " ";
+}
+
+function getFallbackTitle() {
+    var titleTemp = document.querySelector('title');
+    return titleTemp ? titleTemp.innerHTML : " ";
+}
+
+function defaults(obj) {
+    if (!isObject(obj)) return obj;
+    for (var i = 1, length = arguments.length; i < length; i++) {
+        var source = arguments[i];
+        for (var prop in source) {
+            if (obj[prop] === void 0) obj[prop] = source[prop];
+        }
+    }
+    return obj;
+}
+
+var onShare;
+
+function onBridgeReady() {
+    WeixinJSBridge.on('menu:share:appmessage', function(argv) {
+        var data = defaults(onShare && onShare(), {
+            link: location.href,
+            img_url: getFallbackImageUrl(),
+            desc: ' ',
+            title: getFallbackTitle()
+        });
+        WeixinJSBridge.invoke('sendAppMessage', data, function(res) {});
+    });
+
+    WeixinJSBridge.on('menu:share:timeline', function(argv) {
+        var data = defaults(onShare && onShare(), {
+            link: location.href,
+            img_url: getFallbackImageUrl(),
+            desc: ' ',
+            title: getFallbackTitle()
+        });
+        WeixinJSBridge.invoke('shareTimeline', data, function(res) {});
+    });
+}
+
+if (document.addEventListener) {
+    document.addEventListener('WeixinJSBridgeReady', onBridgeReady, false);
+} else if (document.attachEvent) {
+    document.attachEvent('WeixinJSBridgeReady', onBridgeReady);
+    document.attachEvent('onWeixinJSBridgeReady', onBridgeReady);
+}
+
+module.exports = function(fn) {
+    onShare = fn;
+};
 
 },{}]},{},[1]);

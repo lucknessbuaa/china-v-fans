@@ -33,7 +33,7 @@ fansRouter.get('/:resource/:id?', function(req, res) {
     resource = req.params.resource;
     id = req.params.id;
     
-    return id ? res.redirect('/#' + resource + '/' + id) : res.redirect('/#' + resource);
+    return id ? res.redirect('/fans/#' + resource + '/' + id) : res.redirect('/fans/#' + resource);
 });
 
 /*fansRouter.get('/photo/:id?', function(req, res) {

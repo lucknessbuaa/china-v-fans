@@ -76,10 +76,13 @@ var DetailView = Backbone.View.extend({
             this.trigger('exit');
         }, this));
 
-        window.onwechatshare = function() {
-            return {};
-        };
-        wechatshare(window.onwechatshare);
+        wechatshare(_.bind(function() {
+            return {
+                title: options.name,
+                desc: options.contents,
+                img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        }, this));
     },
 
     setNews: function(id) {
@@ -95,6 +98,13 @@ var DetailView = Backbone.View.extend({
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
+            wechatshare(_.bind(function() {
+                return {
+                    title: data.name || ' ',
+                    desc: this.$content[0].innerText || ' ',
+                    img_url: data.image || 'http://wx.jdb.cn/static/img/share.jpg'
+                }
+            }, this));
         }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
@@ -263,16 +273,14 @@ var FavorRouter = Backbone.Router.extend({
 
         this.newsView.show();
 
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function(){
             return {
-                link: "http://wx.jdb.cn/favor",
+                link: window.location.host + "/favor",
                 desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
                 title: "加多宝中国好声音正宗V资讯",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
-
-        wechatshare(window.onwechatshare);
+        }, this));
     },
 
     newsExit: function() {

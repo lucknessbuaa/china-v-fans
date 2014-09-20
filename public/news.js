@@ -11,7 +11,6 @@ require("velocity");
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = require("alertify");
-require('./components/wechat-share/index');
 
 var CONTENT_ID = 2;
 
@@ -91,6 +90,13 @@ var DetailView = Backbone.View.extend({
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
+            wechatshare(_.bind(function() {
+                return {
+                    title: data.name || ' ',
+                    desc: this.$content[0].innerText || ' ',
+                    img_url: data.image || 'http://wx.jdb.cn/static/img/share.jpg'
+                }
+            }, this));
         }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
@@ -255,19 +261,17 @@ var NewsRouter = Backbone.Router.extend({
         if (!this.newsView) {
             this.newsView = new NewsView();
             this.newsView.$el.appendTo($('.content'));
-            this.newsView.show();
-        }else{
-            this.newsView.show();
         }
+        this.newsView.show();
 
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function(){
             return {
-                link: "http://wx.jdb.cn/favor",
+                link: window.location.host + "/news",
                 desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
                 title: "加多宝中国好声音正宗V资讯",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
+        }, this));
     },
 
     newsExit: function() {
@@ -296,7 +300,7 @@ $(function() {
 
     new NewsRouter();
     Backbone.history.start({
-        root: "/news/",
-        pushState: true
+        root: "/news/"
+        //pushState: true
     });
 });

@@ -99,13 +99,6 @@ var NewsDetail = Backbone.View.extend({
             this.trigger('exit');
         }, this));
 
-        window.onwechatshare = _.bind(function() {
-            return {
-                desc: '',
-                img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
-            }
-        }, this);
-        wechatshare(window.onwechatshare);
     },
 
     setNews: function(id) {
@@ -121,6 +114,13 @@ var NewsDetail = Backbone.View.extend({
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
+            wechatshare(_.bind(function() {
+                return {
+                    title: data.name || ' ',
+                    desc: this.$content[0].innerText || ' ',
+                    img_url: data.image || 'http://wx.jdb.cn/static/img/share.jpg'
+                }
+            }, this));
         }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
@@ -143,17 +143,14 @@ var NewsDetail = Backbone.View.extend({
 var ImageView = Backbone.View.extend({
     initialize: function(options) {
         var self = this;
-        window.onwechatshare = _.bind(function() {
-            var data = {
-                link: "http://wx.jdb.cn/fans/#photo" + (this.imageId ? "/" + this.imageId : ""),
+        wechatshare(_.bind(function() {
+            return {
+                link: window.location.host + "/fans/photo" + (this.imageId ? "/" + this.imageId : ""),
                 desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
                 title: "加多宝中国好声音正宗V海报",
                 img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
             }
-            alert(data.link);
-            return data;
-        }, this);
-        wechatshare(window.onwechatshare);
+        }, this));
 
         var tpl = _.template(multiline(function() {
             /*@preserve
@@ -746,15 +743,14 @@ var FansRouter = Backbone.Router.extend({
         }
 
         this.ensureTab('photo');
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function() {
             return {
-                link: "http://wx.jdb.cn/fans/#photo",
+                link: window.location.host + "/fans/photo",
                 desc: "跟你分享我珍藏的加多宝中国好声音人气学员海报，一般人我不给他看的~",
                 title: "加多宝中国好声音正宗V海报",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
-        //wechatshare(window.onwechatshare);
+        }, this));
 
         if (!photoListView) {
             photoListView = new PhotoListView();
@@ -781,15 +777,14 @@ var FansRouter = Backbone.Router.extend({
     video: function(id) {
         this.ensureTab('video');
 
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function(){
             return {
-                link: "http://wx.jdb.cn/fans/video",
+                link: window.location.host + "/fans/video",
                 desc: "分享一个中国好声音视频给你,带你看好声音台前幕后!",
                 title: "加多宝中国好声音正宗V视频",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
-        wechatshare(window.onwechatshare);
+        }, this));
     },
 
     news: function() {
@@ -799,15 +794,14 @@ var FansRouter = Backbone.Router.extend({
 
         this.ensureTab('news');
 
-        window.onwechatshare = function() {
+        wechatshare(_.bind(function(){
             return {
-                link: "http://wx.jdb.cn/fans/news",
+                link: window.location.host + "/fans/news",
                 desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
                 title: "加多宝中国好声音正宗V资讯",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
-        };
-        wechatshare(window.onwechatshare);
+        }, this));
     },
 
     newsExit: function() {

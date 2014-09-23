@@ -11,23 +11,19 @@ require("velocity");
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = require("alertify");
-require('./components/wechat-share/index');
+//require('./components/wechat-share/index');
 
-var CONTENT_ID = 1;
+var CONTENT_ID = 3;
 
 function getNews(id) {
     return $.get("/contents/API/output/article/" + id + "/?format=json&content=");
 }
 
 function getNewsList(offset, limit) {
-    return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
+    return $.get("/contents/API/output/article/?format=json");
 }
 
-function getBigPicture(id) {
-    return $.get("/contents/API/output/bigpicture/" + id + "/?format=json&content=");
-}
-
-function getBigPictureList(offset, limit) {
+function getImageList(offset, limit) {
     return $.get("/contents/API/output/bigpicture/?format=json");
 }
 
@@ -36,6 +32,56 @@ function postLog(id, uid) {
         option_id: id,
         uid: uid
     }, 'json');
+}
+
+function initScroll() {
+    var speed = 3000,
+        curClass = 'cur';
+    $('.scroll-banner').css({
+        width: '100%',
+        overflow: 'hidden'
+    });
+    var $box = $('.scroll-banner .box'),
+        $btnlist = $('.btn .dot');
+    if ($box.length < 1) return;
+    var $bannerlist = $box.children(),
+        min = 0,
+        max = $bannerlist.length - 1;
+    if (max < 1) return;
+    var step = $box.width(),
+        totalWidth = step * (max + 1);
+    $bannerlist.css('width', step + 'px');
+    $box.css({
+        width: totalWidth + 'px',
+        left: 0,
+        '-webkit-transition': 'all 0.5s ease',
+        '-moz-transition': 'all 0.5s ease',
+        'transition': 'all 0.5s ease'
+    });
+    var curindex = 0;
+    var moveto = function(index) {
+        var toindex = index;
+        toindex = toindex > min ? toindex : min;
+        toindex = toindex < max ? toindex : max;
+        $box.css({
+            left: -toindex * step + 'px'
+        });
+        $btnlist.each(function(i, e) {
+            if (i == toindex)
+                $(e).addClass(curClass);
+            else
+                $(e).removeClass(curClass);
+        });
+        $($bannerlist[toindex]).show();
+        $('.scroll-banner .name').hide();
+        $($('.scroll-banner .name')[toindex]).show();
+        curindex = toindex;
+    };
+    moveto(curindex);
+    var timer = setInterval(function() {
+        var toindex = (curindex + 1) % (max + 1);
+        moveto(toindex);
+    }, speed);
 }
 
 var ViewProto = {
@@ -50,64 +96,82 @@ var ViewProto = {
 
 var BaseView = Backbone.View.extend(ViewProto);
 
-var BigPicture = Backbone.View.extend({
+var DetailView = Backbone.View.extend({
     initialize: function(options) {
-        var tpl = multpl(function() {
+        var tpl = _.template(multiline(function() {
             /*@preserve
-            <li class='picture-item'>
+            <div class='news-detail'>
+                <div class='title'></div>
+                <div class='date'></div>
                 <div class='cover-wrapper'>
                     <div class='cover'>
-                        <img class="image" style='display:none' src='<%= image >'>
                     </div>
                 </div>
-            </li>
+                <div class='con hi'>
+                    <div class='content-wrapper'>
+                    </div>
+                </div>
+            </div>
             */
-        });
+        }).trim());
+        this.setElement($(tpl(options))[0]);
 
-        this.setElement($(tpl(options).trim()));
-        
+        this.$title = this.$el.find('.title');
+        this.$date = this.$el.find('.date');
+        this.$content = this.$el.find('.content-wrapper');
         this.$wrapper = this.$el.find('.cover');
-        this.$image = this.$el.find('img.image');
         this.width = window.innerWidth;
         this.height = 160;
-        this.resize = false;
-        //this.spinner = new Spinner({
-        //    color: '#fff',
-        //    lines: 12
-        //});
-        //this.spinner.spin(this.$wrapper[0]);
-        this.$image.load(_.bind(function(){
-            this.ensureSize();
-          //  this.spinner.stop();
-        }, this));
-        this.$image.error(_.bind(function() {
-            //this.spinner.stop();
+        this.spinner = new Spinner({
+            color: '#fff',
+            lines: 12
+        });
+        this.spinner.spin(this.$wrapper[0]);
+        this.$el.click(_.bind(function() {
+            this.trigger('exit');
         }, this));
     },
 
-    ensureSize: function() {
-        if (this.$image[0].naturalWidth == 0 || this.resize) {
-            return;
-        }
-        this.resize = true;
+    setNews: function(id) {
+        getNews(id).then(_.bind(function(data) {
+            this.$wrapper.html("");
+            this.image = new Image();
+            this.image.src = data.image;
+            this.$image = $(this.image);
+
+            this.$image.load(_.bind(function() {
+                this.onImageLoad();
+            }, this));
+            this.$title[0].innerHTML = data.name;
+            this.$date[0].innerHTML = "2014-08-09";
+            this.$content[0].innerHTML = data.contents;
+            wechatshare(_.bind(function() {
+                return {
+                    title: data.name || ' ',
+                    desc: this.$content[0].innerText || ' ',
+                    img_url: data.image || 'http://wx.jdb.cn/static/img/share.jpg'
+                }
+            }, this));
+        }, this)).always(_.bind(function() {
+            this.spinner.stop();
+        }, this));
+    },
+
+    onImageLoad: function() {
         var size = sizing.cover(this.width, this.height,
             this.$image[0].naturalWidth, this.$image[0].naturalHeight);
         this.$image.css('width', size.width + 'px');
         this.$image.css('margin-left', (-size.width / 2) + 'px')
         this.$image.css('left', '50%');
-        this.$image.show();
+        this.$image.appendTo(this.$wrapper);
     },
 
-    loadAgain: function() {
-        if (this.$image[0].naturalWidth == 0) {
-            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
-        } else {
-            this.ensureSize();
-        }
+    destroy: function() {
+        this.$el.remove();
     }
 });
 
-var StudentItem = Backbone.View.extend({
+var NewsItem = Backbone.View.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
@@ -137,7 +201,8 @@ var StudentItem = Backbone.View.extend({
         this.$detail = this.$el.find('.detail');
 
         this.$detail.click(_.bind(function() {
-            Backbone.history.navigate("/news/" + options.id, {
+            postLog(options.id, uid());
+            Backbone.history.navigate("" + options.id, {
                 trigger: true
             });
         }, this));
@@ -181,135 +246,204 @@ var StudentItem = Backbone.View.extend({
     }
 });
 
-var StudentPage = BaseView.extend({
+var ImageItem = Backbone.View.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
-            <div class='student-page'>
-                <div class='big-picture scroll-banner'>
-				    <p class='tip'>暂无图片</p>
-                    <ul class="box picture-list list-unstyled">
+            <li class='item cover'>
+                <a href="#">
+                    <img class='image' src="<%= image %>">
+                </a>
+            </li>
+            */
+        });
+        this.setElement($(tpl(options).trim()));
+        this.$wrapper = this.$el.find('.cover');
+        this.$image = this.$el.find('img.image');
+
+        this.width = window.innerWidth;
+        this.height = 160;
+        this.resize = false;
+        this.$image.load(_.bind(function() {
+            this.ensureSize();
+            //this.spinner.stop();
+        }, this));
+        this.$image.error(_.bind(function() {
+            //this.spinner.stop();
+        }, this));
+    },
+
+    ensureSize: function() {
+        if (this.$image[0].naturalWidth == 0 || this.resize) {
+            return;
+        }
+        this.resize = true;
+        var size = sizing.cover(this.width, this.height,
+            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
+        this.$image.css('width', size.width + 'px');
+        //this.$image.css('margin-left', (-size.width / 2) + 'px')
+        this.$image.css('left', '50%');
+        this.$image.show();
+
+    },
+
+    loadAgain: function() {
+        if (this.$image[0].naturalWidth == 0) {
+            this.$image.attr('src', this.$image.attr('src') + '?' + Math.random());
+        } else {
+            this.ensureSize();
+        }
+    }
+});
+
+
+var StudentView = BaseView.extend({
+    initialize: function(options) {
+        var tpl = multpl(function() {
+            /*@preserve
+            <div class='scroll-banner'>
+				<p class='tip'>暂无资讯</p>
+                <ul class='box'>
+                </ul>
+                <div class="tit">
+                    <span class="btn"></span>
                 </div>
-                <div class='article-list-wrapper'>
-				    <p class='tip'>暂无资讯</p>
-                    <ul class='article-list list-unstyled'>     
-                </div>
-            <div>
+            </div>
+            <div class='news-list-wrapper'>
+	    	 	<p class='tip'>暂无资讯</p>
+                <ul class='news-list list-unstyled'>
+                </ul>
+            </div>
             */
             console.log
         });
         this.setElement($(tpl(options).trim()));
-        this.$list = this.$el.find('.article-list');
-        this.$imageList = this.$el.find('.picture-list');
-        this.$newsWrapper = this.$el.find('.article-list-wrapper');
-        this.$imageWrapper = this.$el.find('.article-list-wrapper');
+        this.$imageList = this.$el.find('.box');
+        this.$newsList = this.$el.find('.news-list');
+        this.$newsWrapper = this.$el.find('.news-list-wrapper');
+        this.$imageWrapper = this.$el.find('.scroll-banner');
+        this.$title = this.$el.find('.scroll-banner .tit');
+        this.$node = this.$el.find('.tit');
+        this.$dot = this.$el.find('.tit .btn');
+    },
+
+    createDot: function(){
+        var oSpan = document.createElement("span");
+        $(oSpan).addClass("dot");
+        return oSpan;
+    },
+
+    createSpan: function(content){
+        var oSpan = document.createElement("span");
+        var oText = document.createTextNode(content);
+        $(oSpan).addClass("name");
+        oSpan.appendChild(oText);
+        return oSpan;
     },
 
     show: function() {
-        if (!this.itemlist) {
-            this.itemlist = [];
-            this.spinnerNews = new Spinner({
+        if (!this.imagelist) {
+            this.imagelist = [];
+            this.spinner = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinnerNews.spin(this.$newsWrapper);
+            this.spinner.spin(this.$imageWrapper);
 
-            getNewsList(0, 10000).then(_.bind(function(data) {
-                if (data.objects.length === 0) {
-                    return this.$newsWrapper.addClass('empty');
-                }
-
-                this.$newsWrapper.removeClass('empty');
-                _.each(data.objects, _.bind(function(article) {
-                    var item = new StudentItem(article);
-                    this.itemlist.push(item);
-                    item.$el.appendTo(this.$list);
-                }, this));
-                this.spinnerNews.stop();
-            }, this), _.bind(function() {
-                this.$newsWrapper.children('p.tip').html('网络异常');
-                this.$newsWrapper.addClass('empty');
-            }, this)).always(_.bind(function() {
-                this.spinnerNews.stop();
-            }, this));
-
-        } else if (this.itemlist.length !== 0) {
-            this.getLoad();
-        }
-
-        if (!this.picturelist) {
-            this.picturelist = [];
-            this.spinnerImg = new Spinner({
-                color: '#fff',
-                lines: 12
-            });
-            this.spinnerImg.spin(this.$imageWrapper);
-
-            getBigPictureList(0, 10000).then(_.bind(function(data) {
+            getImageList(0, 10000).then(_.bind(function(data) {
                 if (data.objects.length === 0) {
                     return this.$imageWrapper.addClass('empty');
                 }
 
                 this.$imageWrapper.removeClass('empty');
-                _.each(data.objects.data, _.bind(function(article) {
-                    var item = new BigPicture(article);
-                    this.picturelist.push(item);
-                    item.$el.appendTo(this.$imageList);
+                _.each(data.objects, _.bind(function(article) {
+                    var image = new ImageItem(article);
+                    this.imagelist.push(image);
+                    image.$el.appendTo(this.$imageList);
+                    var oSpan = this.createSpan(article.name);
+                    //this.$node.insertBefore(oSpan, this.$dot);
+                    oSpan = this.createDot();
+                    //this.$dot[0].appendChild(oSpan);
                 }, this));
-                this.spinnerImg.stop();
+                this.spinner.stop();
             }, this), _.bind(function() {
                 this.$imageWrapper.children('p.tip').html('网络异常');
                 this.$imageWrapper.addClass('empty');
             }, this)).always(_.bind(function() {
-                this.spinnerImg.stop();
+                this.spinner.stop();
+                initScroll();
             }, this));
 
-        } else if (this.picturelist.length !== 0) {
-            this.getPictureLoad();
+        } else if (this.imagelist.length !== 0) {
+            this.getImageLoad();
+        }
+
+        if (!this.itemlist) {
+            this.itemlist = [];
+            this.spinner = new Spinner({
+                color: '#fff',
+                lines: 12
+            });
+            this.spinner.spin(this.$newsWrapper);
+
+            getNewsList(0, 10000).then(_.bind(function(data) {
+                if (data.objects.length === 0) {
+                    return this.$el.addClass('empty');
+                }
+
+                this.$el.removeClass('empty');
+                _.each(data.objects, _.bind(function(article) {
+                    var item = new NewsItem(article);
+                    this.itemlist.push(item);
+                    item.$el.appendTo(this.$newsList);
+                }, this));
+                this.spinner.stop();
+            }, this), _.bind(function() {
+                this.$el.children('p.tip').html('网络异常');
+                this.$el.addClass('empty');
+            }, this)).always(_.bind(function() {
+                this.spinner.stop();
+            }, this));
+
+        } else if (this.itemlist.length !== 0) {
+            this.getNewsLoad();
         }
         this.$el.show();
     },
 
-    getPictureLoad: function() {
-        for (var i = 0; i < this.picturelist.length; i++) {
-            this.picturelist[i].loadAgain();
+    getNewsLoad: function() {
+        for (var i = 0; i < this.itemlist.length; i++) {
+            this.itemlist[i].loadAgain();
         }
     },
 
-    getLoad: function() {
-        for (var i = 0; i < this.itemlist.length; i++) {
-            this.itemlist[i].loadAgain();
+    getImageLoad: function() {
+        for (var i = 0; i < this.imagelist.length; i++) {
+            this.imagelist[i].loadAgain();
         }
     }
 });
 
 var StudentRouter = Backbone.Router.extend({
     routes: {
-        "": "all"
-        //"bigpicture/:id": "bigpicture",
-        //"news/:id": "news"
+        "": "all",
+        ":id": "newsDetail" 
     },
 
-    all: function(){
-        /*if(this.studentItem){
+    all: function() {
+        if(this.detailView){
             this.newsExit();
         }
-        
-        if(this.bigpicture){
-            this.bigpictureExit();
-        }*/
 
-        if (!this.studentPage) {
-            this.studentPage = new StudentPage();
-            this.studentPage.$el.appendTo($('.content'));
-            this.studentPage.show();
-        }else{
-            this.studentPage.show();
+        if (!this.studentView) {
+            this.studentView = new StudentView();
+            this.studentView.$el.appendTo($('.content'));
         }
+
+        this.studentView.show();
     },
 
-    //以下都是错误的内容，待修改
-    /*newsExit: function() {
+    newsExit: function() {
         this.detailView.destroy();
         this.detailView = null;
 
@@ -319,25 +453,16 @@ var StudentRouter = Backbone.Router.extend({
         });
     },
 
-    news: function(id){
-        if (!this.studentItem) {
-            this.studentItem = new StudentItem();
-            this.studentItem.$el.appendTo($('.content'));
+    newsDetail: function(id){
+        if (!this.detailView) {
+            this.detailView = new DetailView();
+            this.detailView.$el.appendTo($('.content'));
         }
 
-        this.studentItem.setNews(id);
-        this.studentItem.on('exit', _.bind(this.newsExit, this));
-    },
+        this.detailView.setNews(id);
+        this.detailView.on('exit', _.bind(this.newsExit, this));
+    }
 
-    bigpicture: function(id){
-        if (!this.bigPicture) {
-            this.bigPicture = new BigPicture();
-            this.bigPicture.$el.appendTo($('.content'));
-        }
-
-        this.pigPicture.setNews(id);
-        this.pigPicture.on('exit', _.bind(this.bigpictureExit, this));
-    }*/
 });
 
 $(function() {
@@ -345,7 +470,6 @@ $(function() {
 
     new StudentRouter();
     Backbone.history.start({
-        root: "/student/",
-        pushState: true
+        root: "/student/"
     });
 });

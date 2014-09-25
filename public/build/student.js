@@ -13233,9 +13233,7 @@ Backbone.$ = $;
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = (typeof window !== "undefined" ? window.alertify : typeof global !== "undefined" ? global.alertify : null);
-//require('./components/wechat-share/index');
 
-var CONTENT_ID = 3;
 
 function getNews(id) {
     return $.get("/contents/API/output/article/" + id + "/?format=json&content=");
@@ -13249,10 +13247,14 @@ function getImageList(offset, limit) {
     return $.get("/contents/API/output/bigpicture/?format=json");
 }
 
+if(!localStorage.uid){
+    localStorage.uid = uid();
+}
+
 function postLog(id, uid) {
     var request = $.post("/contents/API/logs", {
         option_id: id,
-        uid: uid
+        uid: localStorage.uid
     }, 'json');
 }
 
@@ -13352,6 +13354,13 @@ var DetailView = Backbone.View.extend({
         this.$el.click(_.bind(function() {
             this.trigger('exit');
         }, this));
+        wechatshare(_.bind(function() {
+            return {
+                title: options.name,
+                desc: options.contents,
+                img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        }, this));
     },
 
     setNews: function(id) {
@@ -13424,7 +13433,8 @@ var NewsItem = Backbone.View.extend({
 
         this.$detail.click(_.bind(function() {
             postLog(options.id, uid());
-            Backbone.history.navigate("" + options.id, {
+            Backbone.history.navigate("/news/" + options.id, {
+                replace: true,
                 trigger: true
             });
         }, this));
@@ -13473,8 +13483,8 @@ var ImageItem = Backbone.View.extend({
         var tpl = multpl(function() {
             /*@preserve
             <li class='item cover'>
-                <a href="#">
-                    <img class='image' src="<%= image %>">
+                <a>
+                    <img class='image' src='<%= image %>'>
                 </a>
             </li>
             */
@@ -13482,9 +13492,33 @@ var ImageItem = Backbone.View.extend({
         this.setElement($(tpl(options).trim()));
         this.$wrapper = this.$el.find('.cover');
         this.$image = this.$el.find('img.image');
+        this.$link = this.$el.find('a');
+        if(options.data){
+            this.type = options.data.type;
+        }
+
+        if(options.url){
+            this.$image.click(_.bind(function() {
+                window.location.href = options.url;
+                postLog(options.id, uid());
+            }, this));
+        }else if(this.type == 3){
+            this.$image.click(_.bind(function() {
+                window.location.href = options.data.url;
+                postLog(options.id, uid());
+            }, this));
+        }else if(this.type == 1){
+            this.$image.click(_.bind(function() {
+                postLog(options.id, uid());
+                Backbone.history.navigate("/news/" + options.data.id, {
+                    replace: true,
+                    trigger: true
+                });
+            }, this));
+        }
 
         this.width = window.innerWidth;
-        this.height = 160;
+        this.height = 175;
         this.resize = false;
         this.$image.load(_.bind(function() {
             this.ensureSize();
@@ -13523,18 +13557,21 @@ var StudentView = BaseView.extend({
     initialize: function(options) {
         var tpl = multpl(function() {
             /*@preserve
-            <div class='scroll-banner'>
-				<p class='tip'>暂无资讯</p>
-                <ul class='box'>
-                </ul>
-                <div class="tit">
-                    <span class="btn"></span>
+            <div class='all'>
+                <div class='scroll-banner'>
+			    	<p class='tip'>暂无资讯</p>
+                    <ul class='box'>
+                    </ul>
+                    <div class='tit'>
+                        <span class='btn'></span>
+                        <span class='name-list'></span>
+                    </div>
                 </div>
-            </div>
-            <div class='news-list-wrapper'>
-	    	 	<p class='tip'>暂无资讯</p>
-                <ul class='news-list list-unstyled'>
-                </ul>
+                <div class='news-list-wrapper'>
+	    	     	<p class='tip'>暂无资讯</p>
+                    <ul class='news-list list-unstyled'>
+                    </ul>
+                </div>
             </div>
             */
             console.log
@@ -13544,21 +13581,20 @@ var StudentView = BaseView.extend({
         this.$newsList = this.$el.find('.news-list');
         this.$newsWrapper = this.$el.find('.news-list-wrapper');
         this.$imageWrapper = this.$el.find('.scroll-banner');
-        this.$title = this.$el.find('.scroll-banner .tit');
-        this.$node = this.$el.find('.tit');
+        this.$node = this.$el.find('.tit .name-list');
         this.$dot = this.$el.find('.tit .btn');
     },
 
     createDot: function(){
-        var oSpan = document.createElement("span");
-        $(oSpan).addClass("dot");
+        var oSpan = document.createElement('span');
+        $(oSpan).addClass('dot');
         return oSpan;
     },
 
     createSpan: function(content){
-        var oSpan = document.createElement("span");
+        var oSpan = document.createElement('span');
         var oText = document.createTextNode(content);
-        $(oSpan).addClass("name");
+        $(oSpan).addClass('name');
         oSpan.appendChild(oText);
         return oSpan;
     },
@@ -13566,11 +13602,11 @@ var StudentView = BaseView.extend({
     show: function() {
         if (!this.imagelist) {
             this.imagelist = [];
-            this.spinner = new Spinner({
+            this.spinnerImage = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(this.$imageWrapper);
+            //this.spinnerImage.spin(this.$imageWrapper[0]);
 
             getImageList(0, 10000).then(_.bind(function(data) {
                 if (data.objects.length === 0) {
@@ -13582,17 +13618,16 @@ var StudentView = BaseView.extend({
                     var image = new ImageItem(article);
                     this.imagelist.push(image);
                     image.$el.appendTo(this.$imageList);
-                    var oSpan = this.createSpan(article.name);
-                    //this.$node.insertBefore(oSpan, this.$dot);
-                    oSpan = this.createDot();
-                    //this.$dot[0].appendChild(oSpan);
+                    var oSpan = this.createDot();
+                    this.$dot[0].appendChild(oSpan);
+                    oSpan = this.createSpan(article.name);
+                    this.$node[0].appendChild(oSpan);
                 }, this));
-                this.spinner.stop();
             }, this), _.bind(function() {
                 this.$imageWrapper.children('p.tip').html('网络异常');
                 this.$imageWrapper.addClass('empty');
             }, this)).always(_.bind(function() {
-                this.spinner.stop();
+                //this.spinnerImage.stop();
                 initScroll();
             }, this));
 
@@ -13602,11 +13637,11 @@ var StudentView = BaseView.extend({
 
         if (!this.itemlist) {
             this.itemlist = [];
-            this.spinner = new Spinner({
+            this.spinnerNews = new Spinner({
                 color: '#fff',
                 lines: 12
             });
-            this.spinner.spin(this.$newsWrapper);
+            //this.spinnerNews.spin(this.$newsWrapper[0]);
 
             getNewsList(0, 10000).then(_.bind(function(data) {
                 if (data.objects.length === 0) {
@@ -13619,12 +13654,11 @@ var StudentView = BaseView.extend({
                     this.itemlist.push(item);
                     item.$el.appendTo(this.$newsList);
                 }, this));
-                this.spinner.stop();
             }, this), _.bind(function() {
                 this.$el.children('p.tip').html('网络异常');
                 this.$el.addClass('empty');
             }, this)).always(_.bind(function() {
-                this.spinner.stop();
+              //  this.spinnerNews.stop();
             }, this));
 
         } else if (this.itemlist.length !== 0) {
@@ -13649,7 +13683,7 @@ var StudentView = BaseView.extend({
 var StudentRouter = Backbone.Router.extend({
     routes: {
         "": "all",
-        ":id": "newsDetail" 
+        "news/:id": "newsDetail" 
     },
 
     all: function() {
@@ -13661,8 +13695,16 @@ var StudentRouter = Backbone.Router.extend({
             this.studentView = new StudentView();
             this.studentView.$el.appendTo($('.content'));
         }
-
         this.studentView.show();
+
+        wechatshare(_.bind(function(){
+            return {
+                link: window.location.host + "/student",
+                desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
+                title: "加多宝中国好声音正宗V资讯",
+                img_url: 'http://wx.jdb.cn/static/img/share.jpg'
+            }
+        }, this));
     },
 
     newsExit: function() {

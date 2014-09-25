@@ -23,10 +23,14 @@ function getNewsList(offset, limit) {
     return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
+if(!localStorage.uid){
+    localStorage.uid = uid();
+}
+
 function postLog(id, uid) {
     var request = $.post("/contents/API/logs", {
         option_id: id,
-        uid: uid
+        uid: localStorage.uid
     }, 'json');
 }
 

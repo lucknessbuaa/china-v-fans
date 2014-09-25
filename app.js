@@ -124,7 +124,7 @@ studentRouter.get('/bigpicture/:id?', function(req, res) {
     return res.render('student.jade');
 });
 
-studentRouter.get('/:id?', function(req, res) {
+studentRouter.get('/news/:id?', function(req, res) {
     return res.render('student.jade');
 });
 

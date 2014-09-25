@@ -45,10 +45,14 @@ function postPhoto(id) {
     }, 'json');
 }
 
+if(!localStorage.uid){
+    localStorage.uid = uid();
+}
+
 function postLog(id, uid) {
     var request = $.post("/contents/API/logs", {
         option_id: id,
-        uid: uid
+        uid: localStorage.uid
     }, 'json');
 }
 

@@ -13234,17 +13234,18 @@ var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = (typeof window !== "undefined" ? window.alertify : typeof global !== "undefined" ? global.alertify : null);
 
+var CONTENT_ID = 7;
 
 function getNews(id) {
     return $.get("/contents/API/output/article/" + id + "/?format=json&content=");
 }
 
 function getNewsList(offset, limit) {
-    return $.get("/contents/API/output/article/?format=json");
+    return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
 
 function getImageList(offset, limit) {
-    return $.get("/contents/API/output/bigpicture/?format=json");
+    return $.get("/contents/API/output/bigpicture/?format=json&content" + CONTENT_ID);
 }
 
 if(!localStorage.uid){
@@ -13434,7 +13435,6 @@ var NewsItem = Backbone.View.extend({
         this.$detail.click(_.bind(function() {
             postLog(options.id, uid());
             Backbone.history.navigate("/news/" + options.id, {
-                replace: true,
                 trigger: true
             });
         }, this));
@@ -13511,7 +13511,6 @@ var ImageItem = Backbone.View.extend({
             this.$image.click(_.bind(function() {
                 postLog(options.id, uid());
                 Backbone.history.navigate("/news/" + options.data.id, {
-                    replace: true,
                     trigger: true
                 });
             }, this));
@@ -13559,7 +13558,7 @@ var StudentView = BaseView.extend({
             /*@preserve
             <div class='all'>
                 <div class='scroll-banner'>
-			    	<p class='tip'>暂无资讯</p>
+			    	<p class='tip'>暂无大图</p>
                     <ul class='box'>
                     </ul>
                     <div class='tit'>

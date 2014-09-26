@@ -4618,6 +4618,9 @@ body {
     border-top: none;
     border-bottom: 2px solid #9A1011; }
 
+.content-wrapper img {
+  max-width: 100%; }
+
 .photo-list-wrapper {
   position: absolute;
   width: 100%;
@@ -4791,9 +4794,6 @@ body {
     .article-list-wrapper .article-list .news-item:last-child {
       border: none; }
     .article-list-wrapper .article-list .news-item .title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       padding: 10px 20px 5px;
       color: #bc0a0c; }
     .article-list-wrapper .article-list .news-item .date {
@@ -4844,9 +4844,6 @@ body {
     .news-list-wrapper .news-list .news-item:last-child {
       border: none; }
     .news-list-wrapper .news-list .news-item .title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       padding: 10px 20px 5px;
       color: #bc0a0c; }
     .news-list-wrapper .news-list .news-item .date {
@@ -4891,9 +4888,6 @@ body {
   background: #ECC013;
   overflow: auto; }
   .news-detail .title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     padding: 10px 20px 5px;
     color: #bc0a0c; }
   .news-detail .date {

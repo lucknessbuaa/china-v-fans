@@ -52,10 +52,6 @@ var DetailView = Backbone.View.extend({
             <div class='news-detail'>
                 <div class='title'></div>
                 <div class='date'></div>
-                <div class='cover-wrapper'>
-                    <div class='cover'>
-                    </div>
-                </div>
                 <div class='con hi'>
                     <div class='content-wrapper'>
                     </div>
@@ -68,40 +64,35 @@ var DetailView = Backbone.View.extend({
         this.$title = this.$el.find('.title');
         this.$date = this.$el.find('.date');
         this.$content = this.$el.find('.content-wrapper');
-        this.$wrapper = this.$el.find('.cover');
         this.width = window.innerWidth;
         this.height = 160;
         this.spinner = new Spinner({
             color: '#fff',
             lines: 12
         });
-        this.spinner.spin(this.$wrapper[0]);
+        this.spinner.spin(this.$el[0]);
         this.$el.click(_.bind(function() {
             this.trigger('exit');
-        }, this));
-
-        wechatshare(_.bind(function() {
-            return {
-                title: options.name,
-                desc: options.contents,
-                img_url: this.imageUrl || 'http://wx.jdb.cn/static/img/share.jpg'
-            }
         }, this));
     },
 
     setNews: function(id) {
         getNews(id).then(_.bind(function(data) {
-            this.$wrapper.html("");
-            this.image = new Image();
-            this.image.src = data.image;
-            this.$image = $(this.image);
-
-            this.$image.load(_.bind(function() {
-                this.onImageLoad();
-            }, this));
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
+            this.$contentImage = this.$content.find('img');
+            for(var i=0; i<this.$contentImage.length; i++) {
+                _.each($(this.$contentImage[i]), _.bind(function(image){
+                    $(image).load(_.bind(function(){
+                        this.reModify(image);
+                    }, this));
+                    $(image).error(_.bind(function() {
+                        image.style.width = window.innerWidth - 40 + 'px';
+                        image.style.height = '160px';
+                    }, this));
+                }, this));
+            }
             wechatshare(_.bind(function() {
                 return {
                     title: data.name || ' ',
@@ -114,13 +105,12 @@ var DetailView = Backbone.View.extend({
         }, this));
     },
 
-    onImageLoad: function() {
+    reModify: function(image){
         var size = sizing.cover(this.width, this.height,
-            this.$image[0].naturalWidth, this.$image[0].naturalHeight);
-        this.$image.css('width', size.width + 'px');
-        this.$image.css('margin-left', (-size.width / 2) + 'px')
-        this.$image.css('left', '50%');
-        this.$image.appendTo(this.$wrapper);
+            image.naturalWidth, image.naturalHeight);
+        $(image).css('width', size.width + 'px');
+        $(image).css('margin-left', (-size.width / 2) + 'px')
+        //$(image).css('left', '50%');
     },
 
     destroy: function() {
@@ -279,9 +269,9 @@ var FavorRouter = Backbone.Router.extend({
 
         wechatshare(_.bind(function(){
             return {
-                link: window.location.host + "/favor",
-                desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
-                title: "加多宝中国好声音正宗V资讯",
+                link: "http://wx.jdb.cn/",
+                desc: "夏天有三宝，V罐、好声音、加多宝",
+                title: "正宗凉茶的无限可能",
                 img_url: 'http://wx.jdb.cn/static/img/share.jpg'
             }
         }, this));

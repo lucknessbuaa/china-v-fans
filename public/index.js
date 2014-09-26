@@ -87,7 +87,7 @@ var NewsDetail = Backbone.View.extend({
         this.$title = this.$el.find('.title');
         this.$date = this.$el.find('.date');
         this.$content = this.$el.find('.content-wrapper');
-        this.width = window.innerWidth;
+        this.width = window.innerWidth - 40;
         this.height = 160;
         this.spinner = new Spinner({
             color: '#fff',
@@ -132,7 +132,8 @@ var NewsDetail = Backbone.View.extend({
         var size = sizing.cover(this.width, this.height,
             image.naturalWidth, image.naturalHeight);
         $(image).css('width', size.width + 'px');
-        $(image).css('margin-left', (-size.width / 2) + 'px')
+        $(image).css('height', size.height + 'px');
+        //$(image).css('margin-left', (-size.width / 2) + 'px')
         //$(image).css('left', '50%');
     },
 

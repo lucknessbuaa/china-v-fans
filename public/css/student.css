@@ -4591,6 +4591,9 @@ button.close {
   top: 0px;
   overflow: hidden; }
 
+.content-wrapper img {
+  max-width: 100%; }
+
 .all {
   overflow: auto;
   height: 100%; }
@@ -4602,8 +4605,7 @@ span.name-list {
 
 .scroll-banner {
   width: 100%;
-  position: relative;
-  height: 179px; }
+  position: relative; }
   .scroll-banner p.tip {
     display: none;
     padding: 6px 12px;
@@ -4672,9 +4674,6 @@ span.name-list {
   .news-list-wrapper .news-list .news-item:last-child {
     border: none; }
   .news-list-wrapper .news-list .news-item .title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     padding: 10px 20px 5px;
     color: #bc0a0c;
     background: #ecc013; }
@@ -4721,9 +4720,6 @@ span.name-list {
   background: #ECC013;
   overflow: auto; }
   .news-detail .title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     padding: 10px 20px 5px;
     color: #bc0a0c; }
   .news-detail .date {

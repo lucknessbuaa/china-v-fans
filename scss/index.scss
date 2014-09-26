@@ -55,6 +55,10 @@ $nav-active-color: #9A1011;
     }
 }
 
+.content-wrapper img {
+    max-width: 100%;
+}
+
 .photo-list-wrapper {
     position: absolute;
     width: 100%;
@@ -223,9 +227,6 @@ $nav-active-color: #9A1011;
 
     .video-list {
 
-		
-
-
         .video-item {
             $color: #9a1011;
             $border-color: $color;
@@ -315,7 +316,6 @@ $nav-active-color: #9A1011;
             }
 
             .title {
-                @include text-overflow();
                 padding: 10px 20px 5px;
                 color: #bc0a0c;
             }
@@ -404,7 +404,6 @@ $nav-active-color: #9A1011;
             }
 
             .title {
-                @include text-overflow();
                 padding: 10px 20px 5px;
                 color: #bc0a0c;
             }
@@ -477,7 +476,6 @@ $nav-active-color: #9A1011;
     overflow: auto;
 
     .title {
-        @include text-overflow();
         padding: 10px 20px 5px;
         color: #bc0a0c;
     }

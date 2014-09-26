@@ -16,6 +16,10 @@ body {
     overflow: hidden;
 }
 
+.content-wrapper img {
+    max-width: 100%;
+}
+
 .news-list-wrapper {
     overflow: auto;
     height: 100%;
@@ -43,7 +47,6 @@ body {
             }
 
             .title {
-                @include text-overflow();
                 padding: 10px 20px 5px;
                 color: #bc0a0c;
             }
@@ -116,7 +119,6 @@ body {
     overflow: auto;
 
     .title {
-        @include text-overflow();
         padding: 10px 20px 5px;
         color: #bc0a0c;
     }

@@ -4591,6 +4591,9 @@ body {
   top: 0px;
   overflow: hidden; }
 
+.content-wrapper img {
+  max-width: 100%; }
+
 .news-list-wrapper {
   overflow: auto;
   height: 100%; }
@@ -4605,9 +4608,6 @@ body {
     .news-list-wrapper .news-list .news-item:last-child {
       border: none; }
     .news-list-wrapper .news-list .news-item .title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       padding: 10px 20px 5px;
       color: #bc0a0c; }
     .news-list-wrapper .news-list .news-item .date {
@@ -4652,9 +4652,6 @@ body {
   background: #ECC013;
   overflow: auto; }
   .news-detail .title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     padding: 10px 20px 5px;
     color: #bc0a0c; }
   .news-detail .date {

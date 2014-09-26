@@ -21,6 +21,10 @@ $nav-active-color: #9A1011;
     overflow: hidden;
 }
 
+.content-wrapper img {
+    max-width: 100%;
+}
+
 .all{
     overflow: auto;
     height: 100%;
@@ -35,7 +39,6 @@ span.name-list {
 .scroll-banner{
     width:100%;
     position: relative;
-    height:179px;
 
 	p.tip {
 		display: none;
@@ -129,7 +132,6 @@ span.name-list {
             }
 
             .title {
-                @include text-overflow();
                 padding: 10px 20px 5px;
                 color: #bc0a0c;
                 background: #ecc013;
@@ -204,7 +206,6 @@ span.name-list {
     overflow:auto;
 
     .title {
-        @include text-overflow();
         padding: 10px 20px 5px;
         color: #bc0a0c;
     }

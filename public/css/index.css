@@ -4594,6 +4594,10 @@ body {
   top: 0px;
   overflow: hidden; }
 
+.content-wrapper img {
+  max-width: 100%;
+  height: auto !important; }
+
 .nav-tabs.header {
   z-index: 1000;
   background: #ECC013;
@@ -4907,7 +4911,7 @@ body {
       display: block;
       position: absolute; }
   .news-detail .con {
-    padding: 8px 20px 0px;
+    padding: 8px 20px;
     color: #6c0b0d; }
     .news-detail .con .content-wrapper {
       line-height: 19px; }

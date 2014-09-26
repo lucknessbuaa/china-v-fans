@@ -18,6 +18,7 @@ body {
 
 .content-wrapper img {
     max-width: 100%;
+    height: auto !important;
 }
 
 .news-list-wrapper {
@@ -148,7 +149,7 @@ body {
     }
 
     .con {
-        padding: 8px 20px 0px;
+        padding: 8px 20px;
         color: darken($color, 10%);
 
         .content-wrapper{

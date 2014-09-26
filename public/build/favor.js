@@ -13293,9 +13293,6 @@ var DetailView = Backbone.View.extend({
             lines: 12
         });
         this.spinner.spin(this.$el[0]);
-        this.$el.click(_.bind(function() {
-            this.trigger('exit');
-        }, this));
     },
 
     setNews: function(id) {
@@ -13303,18 +13300,6 @@ var DetailView = Backbone.View.extend({
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
-            this.$contentImage = this.$content.find('img');
-            for(var i=0; i<this.$contentImage.length; i++) {
-                _.each($(this.$contentImage[i]), _.bind(function(image){
-                    $(image).load(_.bind(function(){
-                        this.reModify(image);
-                    }, this));
-                    $(image).error(_.bind(function() {
-                        image.style.width = window.innerWidth - 40 + 'px';
-                        image.style.height = '160px';
-                    }, this));
-                }, this));
-            }
             wechatshare(_.bind(function() {
                 return {
                     title: data.name || ' ',
@@ -13325,15 +13310,6 @@ var DetailView = Backbone.View.extend({
         }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
-    },
-
-    reModify: function(image){
-        var size = sizing.cover(this.width, this.height,
-            image.naturalWidth, image.naturalHeight);
-        $(image).css('width', size.width + 'px');
-        $(image).css('height', size.height + 'px');
-        //$(image).css('margin-left', (-size.width / 2) + 'px')
-        //$(image).css('left', '50%');
     },
 
     destroy: function() {

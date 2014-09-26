@@ -23,6 +23,7 @@ $nav-active-color: #9A1011;
 
 .content-wrapper img {
     max-width: 100%;
+    height: auto !important;
 }
 
 .all{
@@ -235,7 +236,7 @@ span.name-list {
     }
 
     .con {
-        padding: 8px 20px 0px;
+        padding: 8px 20px;
         color: darken($color, 10%);
 
         .content-wrapper{

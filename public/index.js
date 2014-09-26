@@ -45,7 +45,7 @@ function postPhoto(id) {
     }, 'json');
 }
 
-if(!localStorage.uid){
+if (!localStorage.uid) {
     localStorage.uid = uid();
 }
 
@@ -105,9 +105,9 @@ var NewsDetail = Backbone.View.extend({
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
             this.$contentImage = this.$content.find('img');
-            for(var i=0; i<this.$contentImage.length; i++) {
-                _.each($(this.$contentImage[i]), _.bind(function(image){
-                    $(image).load(_.bind(function(){
+            for (var i = 0; i < this.$contentImage.length; i++) {
+                _.each($(this.$contentImage[i]), _.bind(function(image) {
+                    $(image).load(_.bind(function() {
                         this.reModify(image);
                     }, this));
                     $(image).error(_.bind(function() {
@@ -128,7 +128,7 @@ var NewsDetail = Backbone.View.extend({
         }, this));
     },
 
-    reModify: function(image){
+    reModify: function(image) {
         var size = sizing.cover(this.width, this.height,
             image.naturalWidth, image.naturalHeight);
         $(image).css('width', size.width + 'px');
@@ -657,6 +657,11 @@ var TabView = Backbone.View.extend({
             var $this = $(this);
             var tab = $this.attr('href');
             self.activate(tab);
+
+            Backbone.history.navigate(tab, {
+                replace: true,
+                trigger: true
+            });
         });
 
         this.$el.on('tap', function() {
@@ -667,11 +672,6 @@ var TabView = Backbone.View.extend({
     },
 
     activate: function(tab) {
-        Backbone.history.navigate(tab, {
-            //replace: true,
-            trigger: true
-        });
-
         var activeTab = this.getActiveTab();
         if (activeTab === tab) {
             return;
@@ -725,22 +725,23 @@ var FansRouter = Backbone.Router.extend({
         }
 
         tabView.activate(tab);
+        Backbone.history.navigate(tab, {
+            replace: true
+        });
     },
 
     popupImageView: function() {
-        this.imageView.fadeOut(_.bind(function() {
-            this.imageView.destroy();
-            this.imageView = null;
+        var _imageView = this.imageView;
+        _imageView.fadeOut(_.bind(function() {
+            _imageView.destroy();
         }, this));
 
-        Backbone.history.navigate("/photo", {
-            replace: true,
-            trigger: true
-        });
+        this.imageView = null;
     },
 
     photoList: function() {
         if (this.imageView) {
+            // back from image view
             this.popupImageView();
         }
 
@@ -763,23 +764,32 @@ var FansRouter = Backbone.Router.extend({
     },
 
     photo: function(id) {
-        if (!this.imageView) {
-            this.imageView = new ImageView();
-            this.imageView.$el.appendTo($(".content"));
-        }
+        this.imageView = new ImageView();
+        this.imageView.$el.appendTo($(".content"));
 
         console.log('set image id');
         this.imageView.setImage(id);
         console.log('fadeIn');
         //this.imageView.fadeIn();
 
-        this.imageView.on('exit', _.bind(this.popupImageView, this));
+        this.imageView.on('exit', _.bind(function() {
+            this.popupImageView();
+
+            if (!photoListView) {
+                Backbone.history.navigate("/photo", {
+                    replace: true,
+                    trigger: true
+                });
+            } else {
+                window.history.back();
+            }
+        }, this));
     },
 
     video: function(id) {
         this.ensureTab('video');
 
-        wechatshare(_.bind(function(){
+        wechatshare(_.bind(function() {
             return {
                 link: window.location.host + "/fans/video",
                 desc: "分享一个中国好声音视频给你,带你看好声音台前幕后!",
@@ -796,7 +806,7 @@ var FansRouter = Backbone.Router.extend({
 
         this.ensureTab('news');
 
-        wechatshare(_.bind(function(){
+        wechatshare(_.bind(function() {
             return {
                 link: window.location.host + "/fans/news",
                 desc: "分享一条中国好声音资讯给你,带你了解好声音台前幕后!",
@@ -807,23 +817,16 @@ var FansRouter = Backbone.Router.extend({
     },
 
     newsExit: function() {
-        this.newsDetail.destroy();
-        this.newsDetail = null;
-
-        Backbone.history.navigate("/news", {
-            replace: true,
-            trigger: true
-        });
+        if (this.newsDetail) {
+            this.newsDetail.destroy();
+            this.newsDetail = null;
+        }
     },
 
     newsDetails: function(id) {
-        if (!this.newsDetail) {
-            this.newsDetail = new NewsDetail();
-            this.newsDetail.$el.appendTo($(".content"));
-        }
-
+        this.newsDetail = new NewsDetail();
+        this.newsDetail.$el.appendTo($(".content"));
         this.newsDetail.setNews(id);
-        this.newsDetail.on('exit', _.bind(this.newsExit, this));
     },
 });
 
@@ -831,10 +834,12 @@ $(function() {
     $content = $(".content");
 
     new FansRouter();
-    if(!Backbone.history.start({
+    if (!Backbone.history.start({
         root: "/fans/"
         //pushState: false
     })) {
-        Backbone.history.navigate('photo', {trigger: true});
+        Backbone.history.navigate('photo', {
+            trigger: true
+        });
     }
 });

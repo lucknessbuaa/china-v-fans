@@ -13220,6 +13220,7 @@ will produce an inaccurate conversion value. The same issue exists with the cx/c
 
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
+window.onhashchange=function() {alert(window.location.href);};
 var multiline = require("multiline");
 var _ = require("underscore");
 var multpl = require('multpl');
@@ -13233,7 +13234,8 @@ Backbone.$ = $;
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = (typeof window !== "undefined" ? window.alertify : typeof global !== "undefined" ? global.alertify : null);
-//require('./components/wechat-share/index');
+
+window.onerror = function(msg) { alert(msg) };
 
 var CONTENT_ID = 1;
 
@@ -13248,10 +13250,6 @@ function getPhotoList(offset, limit) {
 function getNewsList(offset, limit) {
     return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
-
-//function getPictureList(offset, limit) {
-//    return $.get("/contents/API/output/bigpicture/?format=json");
-//}
 
 function getPhoto(id) {
     return $.get("/contents/API/output/image/" + id + "/?format=json&content=");
@@ -13286,7 +13284,7 @@ var ViewProto = {
     show: function() {
         this.$el.show();
     }
-}
+};
 
 var BaseView = Backbone.View.extend(ViewProto);
 
@@ -13855,8 +13853,8 @@ var TabView = Backbone.View.extend({
             self.activate(tab);
 
             Backbone.history.navigate(tab, {
-                replace: true,
-                trigger: true
+                trigger: false,
+                replace: true
             });
         });
 
@@ -13897,7 +13895,7 @@ var FansRouter = Backbone.Router.extend({
         "photo/:id": "photo",
         "video": "video",
         "news": "news",
-        "news/:id": "newsDetails",
+        "news/:id": "newsDetails"
     },
 
     ensureTab: function(tab) {
@@ -13922,7 +13920,8 @@ var FansRouter = Backbone.Router.extend({
 
         tabView.activate(tab);
         Backbone.history.navigate(tab, {
-            replace: true
+            replace: true,
+            trigger: false
         });
     },
 
@@ -13973,7 +13972,7 @@ var FansRouter = Backbone.Router.extend({
 
             if (!photoListView) {
                 Backbone.history.navigate("/photo", {
-                    replace: true,
+                    //replace: true,
                     trigger: true
                 });
             } else {
@@ -14035,7 +14034,8 @@ $(function() {
         //pushState: false
     })) {
         Backbone.history.navigate('photo', {
-            trigger: true
+            trigger: true,
+            //replace: true
         });
     }
 });

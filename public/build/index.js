@@ -13853,8 +13853,7 @@ var TabView = Backbone.View.extend({
             self.activate(tab);
 
             Backbone.history.navigate(tab, {
-                trigger: false,
-                replace: true
+                trigger: true
             });
         });
 
@@ -13891,6 +13890,7 @@ var $content, tabView, photoListView, newsView, videoListView;
 
 var FansRouter = Backbone.Router.extend({
     routes: {
+        "": "all",
         "photo": "photoList",
         "photo/:id": "photo",
         "video": "video",
@@ -13898,7 +13898,7 @@ var FansRouter = Backbone.Router.extend({
         "news/:id": "newsDetails"
     },
 
-    ensureTab: function(tab) {
+    ensureTab: function(tab, trigger) {
         if (!tabView) {
             tabView = new TabView()
             tabView.$el.appendTo(document.body);
@@ -13921,7 +13921,7 @@ var FansRouter = Backbone.Router.extend({
         tabView.activate(tab);
         Backbone.history.navigate(tab, {
             replace: true,
-            trigger: false
+            trigger: trigger
         });
     },
 
@@ -13932,6 +13932,18 @@ var FansRouter = Backbone.Router.extend({
         }, this));
 
         this.imageView = null;
+    },
+
+    all: function() {
+        if (!tabView) {
+            return this.ensureTab("photo", true);
+        }
+
+        var tab = tabView.getActiveTab() || 'photo';
+        Backbone.history.navigate(tab, {
+            replace: true,
+            trigger: true
+        });
     },
 
     photoList: function() {
@@ -13976,7 +13988,7 @@ var FansRouter = Backbone.Router.extend({
                     trigger: true
                 });
             } else {
-                window.history.back();
+                window.history.go(-1);
             }
         }, this));
     },
@@ -14024,6 +14036,14 @@ var FansRouter = Backbone.Router.extend({
         this.newsDetail.setNews(id);
     },
 });
+
+window.onhashchange = function(e) {
+    console.re.log('hahschange', window.location.hash);
+};
+
+window.onerror = function(e) {
+    console.re.err(e);
+};
 
 $(function() {
     $content = $(".content");

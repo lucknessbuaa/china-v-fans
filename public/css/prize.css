@@ -4592,7 +4592,8 @@ body {
   overflow: hidden; }
 
 .content-wrapper img {
-  max-width: 100%; }
+  max-width: 100%;
+  height: auto !important; }
 
 .news-list-wrapper {
   overflow: auto;
@@ -4671,7 +4672,7 @@ body {
       display: block;
       position: absolute; }
   .news-detail .con {
-    padding: 8px 20px 0px;
+    padding: 8px 20px;
     color: #6c0b0d; }
     .news-detail .con .content-wrapper {
       line-height: 19px; }

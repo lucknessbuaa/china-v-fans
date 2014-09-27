@@ -1,3 +1,4 @@
+window.onhashchange=function() {alert(window.location.href);};
 var multiline = require("multiline");
 var _ = require("underscore");
 var multpl = require('multpl');
@@ -11,7 +12,8 @@ require("velocity");
 var uid = require('uid');
 var Spinner = require("./components/spin.js/spin");
 var alertify = require("alertify");
-//require('./components/wechat-share/index');
+
+window.onerror = function(msg) { alert(msg) };
 
 var CONTENT_ID = 1;
 
@@ -26,10 +28,6 @@ function getPhotoList(offset, limit) {
 function getNewsList(offset, limit) {
     return $.get("/contents/API/output/article/?format=json&content=" + CONTENT_ID);
 }
-
-//function getPictureList(offset, limit) {
-//    return $.get("/contents/API/output/bigpicture/?format=json");
-//}
 
 function getPhoto(id) {
     return $.get("/contents/API/output/image/" + id + "/?format=json&content=");
@@ -64,7 +62,7 @@ var ViewProto = {
     show: function() {
         this.$el.show();
     }
-}
+};
 
 var BaseView = Backbone.View.extend(ViewProto);
 
@@ -87,16 +85,11 @@ var NewsDetail = Backbone.View.extend({
         this.$title = this.$el.find('.title');
         this.$date = this.$el.find('.date');
         this.$content = this.$el.find('.content-wrapper');
-        this.width = window.innerWidth - 40;
-        this.height = 160;
         this.spinner = new Spinner({
             color: '#fff',
             lines: 12
         });
         this.spinner.spin(this.$el[0]);
-        this.$el.click(_.bind(function() {
-            this.trigger('exit');
-        }, this));
     },
 
     setNews: function(id) {
@@ -104,18 +97,6 @@ var NewsDetail = Backbone.View.extend({
             this.$title[0].innerHTML = data.name;
             this.$date[0].innerHTML = "2014-08-09";
             this.$content[0].innerHTML = data.contents;
-            this.$contentImage = this.$content.find('img');
-            for (var i = 0; i < this.$contentImage.length; i++) {
-                _.each($(this.$contentImage[i]), _.bind(function(image) {
-                    $(image).load(_.bind(function() {
-                        this.reModify(image);
-                    }, this));
-                    $(image).error(_.bind(function() {
-                        image.style.width = window.innerWidth - 40 + 'px';
-                        image.style.height = '160px';
-                    }, this));
-                }, this));
-            }
             wechatshare(_.bind(function() {
                 return {
                     title: data.name || ' ',
@@ -126,15 +107,6 @@ var NewsDetail = Backbone.View.extend({
         }, this)).always(_.bind(function() {
             this.spinner.stop();
         }, this));
-    },
-
-    reModify: function(image) {
-        var size = sizing.cover(this.width, this.height,
-            image.naturalWidth, image.naturalHeight);
-        $(image).css('width', size.width + 'px');
-        $(image).css('height', size.height + 'px');
-        //$(image).css('margin-left', (-size.width / 2) + 'px')
-        //$(image).css('left', '50%');
     },
 
     destroy: function() {
@@ -701,7 +673,7 @@ var FansRouter = Backbone.Router.extend({
         "photo/:id": "photo",
         "video": "video",
         "news": "news",
-        "news/:id": "newsDetails",
+        "news/:id": "newsDetails"
     },
 
     ensureTab: function(tab, trigger) {
@@ -790,7 +762,7 @@ var FansRouter = Backbone.Router.extend({
 
             if (!photoListView) {
                 Backbone.history.navigate("/photo", {
-                    replace: true,
+                    //replace: true,
                     trigger: true
                 });
             } else {
@@ -860,7 +832,8 @@ $(function() {
         //pushState: false
     })) {
         Backbone.history.navigate('photo', {
-            trigger: true
+            trigger: true,
+            //replace: true
         });
     }
 });

@@ -30,9 +30,12 @@ fansRouter.get('/', function(req, res) {
 });
 
 fansRouter.get('/:resource/:id?', function(req, res) {
-    resource = req.params.resource;
+    var resource = req.params.resource;
+    if (resource && resource.slice(0, 1) === '#') {
+        resource = resource.slice(1);
+    }
+
     id = req.params.id;
-    
     return id ? res.redirect('/fans/#' + resource + '/' + id) : res.redirect('/fans/#' + resource);
 });
 

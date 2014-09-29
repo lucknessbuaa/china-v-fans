@@ -13399,25 +13399,16 @@ var NewsItem = Backbone.View.extend({
         this.$detail = this.$el.find('.detail');
         this.$title = this.$el.find('.title');
 
-        this.$title.click(_.bind(function() {
-            postLog(options.id, uid());
-            Backbone.history.navigate("/news/" + options.id, {
-                trigger: true
-            });
-        }, this));
-        this.$wrapper.click(_.bind(function() {
-            postLog(options.id, uid());
-            Backbone.history.navigate("/news/" + options.id, {
-                trigger: true
-            });
-        }, this));
+        this.$clicklist = new Array(this.$title, this.$wrapper, this.$detail);
+        for (index in this.$clicklist) {
+            this.$clicklist[index].click(_.bind(function() {
+                postLog(options.id, uid());
+                Backbone.history.navigate("/news/" + options.id, {
+                    trigger: true
+                });
+            }, this));
+        }
 
-        this.$detail.click(_.bind(function() {
-            postLog(options.id, uid());
-            Backbone.history.navigate("/news/" + options.id, {
-                trigger: true
-            });
-        }, this));
         this.width = window.innerWidth;
         this.height = 160;
         this.resize = false;
@@ -13689,23 +13680,17 @@ var StudentRouter = Backbone.Router.extend({
     },
 
     newsExit: function() {
-        this.detailView.destroy();
-        this.detailView = null;
-
-        Backbone.history.navigate("", {
-            replace: true,
-            trigger: true
-        });
+        if(this.detailView) {
+            this.detailView.destroy();
+            this.detailView = null;
+        }
     },
 
     newsDetail: function(id){
-        if (!this.detailView) {
-            this.detailView = new DetailView();
-            this.detailView.$el.appendTo($('.content'));
-        }
+        this.detailView = new DetailView();
+        this.detailView.$el.appendTo($('.content'));
 
         this.detailView.setNews(id);
-        this.detailView.on('exit', _.bind(this.newsExit, this));
     }
 
 });

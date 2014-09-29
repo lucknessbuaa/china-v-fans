@@ -19,6 +19,7 @@ $nav-active-color: #9A1011;
     position: absolute;
     top: 0px;
     overflow: hidden;
+    background: #ecc013;
 }
 
 .content-wrapper img {
@@ -99,14 +100,16 @@ span.name-list {
 }
 .scroll-banner .tit .btn .dot{
     display:inline-block;
-    background:url(../img/sub-dot.png) no-repeat;
     background-size:100% 100%;
     width:0.5em;
     height:0.5em;
     margin: 0px 2px;
+    background-color: #898989;
+    border-radius: 5px;
 }
 .scroll-banner .tit .btn .cur{
-    background:url(../img/sub-dot-sel.png) no-repeat;
+    background-color: #fff;
+    border-radius: 5px;
 }
 
 .news-list-wrapper {
@@ -135,14 +138,12 @@ span.name-list {
             .title {
                 padding: 10px 20px 5px;
                 color: #bc0a0c;
-                background: #ecc013;
             }
 
             .date {
                 padding: 0px 20px 8px;
                 color: #bc0a0c;
                 font-size: $font-size-small;
-                background: #ecc013;
             }
 
             .cover-wrapper {

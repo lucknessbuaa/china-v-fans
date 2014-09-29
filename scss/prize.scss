@@ -5,7 +5,6 @@
 $bg: #ECC013;
 
 body {
-    background-color: $bg;
 }
 
 .content {
@@ -37,31 +36,40 @@ body {
 
     .news-list {
 
+        p {
+            font-size: 16px;
+        }
+
         .news-item {
             $color: #9a1011;
             $border-color: $color;
-
-            border-bottom: 1px solid $border-color;
 
             &:last-child {
                 border: none;
             }
 
             .title {
-                padding: 10px 20px 5px;
+                padding: 18px 32px 0px;
                 color: #bc0a0c;
+                background-color: $bg;
+                font-size: 20px;
+                line-height: 21px;
+                font-weight: bold;
             }
 
             .date {
-                padding: 0px 20px 8px;
+                padding: 0px 32px 14px;
                 color: #bc0a0c;
-                font-size: $font-size-small;
+                background-color: $bg;
+                font-size: 18px;
+                font-weight: bold;
             }
 
             .cover-wrapper {
                 background: #FFAD91;
                 height: 160px;
                 box-sizing: content-box;
+                display: none;
 
                 .cover {
                     position: relative;
@@ -77,14 +85,14 @@ body {
             }
 
             .con {
-                padding: 8px 20px 0px;
-                color: darken($color, 10%);
+                padding: 16px 32px 0px;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-height:46px;
+                max-height: 146px;
+                color: #5e5e5e;
 
                 .content-wrapper{
-                    line-height:19px;
+                    line-height:26px;
 
                     p{
                         margin:0px;

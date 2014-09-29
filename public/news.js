@@ -258,23 +258,16 @@ var NewsRouter = Backbone.Router.extend({
     },
 
     newsExit: function() {
-        this.detailView.destroy();
-        this.detailView = null;
-
-        Backbone.history.navigate("", {
-            replace: true,
-            trigger: true
-        });
+        if (this.detailView) {
+            this.detailView.destroy();
+            this.detailView = null;
+        }
     },
 
     detail: function(id){
-        if (!this.detailView) {
-            this.detailView = new DetailView();
-            this.detailView.$el.appendTo($('.content'));
-        }
-
+        this.detailView = new DetailView();
+        this.detailView.$el.appendTo($('.content'));
         this.detailView.setNews(id);
-        this.detailView.on('exit', _.bind(this.newsExit, this));
     }
 });
 

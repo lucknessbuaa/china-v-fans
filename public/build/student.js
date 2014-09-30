@@ -13245,7 +13245,7 @@ function getNewsList(offset, limit) {
 }
 
 function getImageList(offset, limit) {
-    return $.get("/contents/API/output/bigpicture/?format=json&content" + CONTENT_ID);
+    return $.get("/contents/API/output/bigpicture/?format=json&content=" + CONTENT_ID);
 }
 
 if(!localStorage.uid){
@@ -13586,14 +13586,12 @@ var StudentView = BaseView.extend({
                 this.$imageWrapper.removeClass('empty');
                 _.each(data.objects, _.bind(function(article) {
                     var image = new ImageItem(article);
-                    if(article.content.indexOf('\/7\/') !== -1){
-                        this.imagelist.push(image);
-                        image.$el.appendTo(this.$imageList);
-                        var oSpan = this.createDot();
-                        this.$dot[0].appendChild(oSpan);
-                        oSpan = this.createSpan(article.name);
-                        this.$node[0].appendChild(oSpan);
-                    }
+                    this.imagelist.push(image);
+                    image.$el.appendTo(this.$imageList);
+                    var oSpan = this.createDot();
+                    this.$dot[0].appendChild(oSpan);
+                    oSpan = this.createSpan(article.name);
+                    this.$node[0].appendChild(oSpan);
                 }, this));
             }, this), _.bind(function() {
                 this.$imageWrapper.children('p.tip').html('网络异常');
